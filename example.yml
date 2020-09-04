@@ -1,6 +1,11 @@
 # --config docker-prefab.yml --push --repo quay.io/lexsca/prefab --target app:200829173900
 
 targets:
+  test:
+    dockerfile: Dockerfile.test
+    depends_on:
+      - app
+
   app:
     dockerfile: Dockerfile
     depends_on:

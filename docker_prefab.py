@@ -22,6 +22,10 @@ class PrefabError(Exception):
     pass
 
 
+class CircularDependencyError(PrefabError):
+    pass
+
+
 class ImageAccessError(PrefabError):
     pass
 
@@ -39,6 +43,10 @@ class ImagePushError(PrefabError):
 
 
 class ImageVerifyError(PrefabError):
+    pass
+
+
+class TargetNotFoundError(PrefabError):
     pass
 
 
@@ -128,10 +136,8 @@ class ImageTree:
         self.repo = repo
         self.targets = targets
         self.config = config
-        self.setup()
-
-    def setup(self):
-        # TODO recurse targets and their dependencies to detect loops
+        self.images = {}
+        self.digests = {}
         # TODO create tree of Image instances
 
         # roughed out build_options:
@@ -145,8 +151,39 @@ class ImageTree:
         #     }
         # }
 
+    def resolve_target_dependencies(self, target, dependencies=None, vectors=None):
+        targets = self.config.get("targets", {})
+        if target not in targets:
+            raise TargetNotFoundError(f"{target} not found")
+
+        if dependencies is None:
+            dependencies = []
+        if vectors is None:
+            vectors = []
+
+        for dependent in targets.get(target).get("depends_on", []):
+            vector = (target, dependent)
+            if vector in vectors:
+                raise CircularDependencyError(f"{target}: target loops to itself")
+            else:
+                vectors.append(vector)
+                self.resolve_target_dependencies(dependent, dependencies, vectors)
+
+            if dependent not in dependencies:
+                dependencies.append(dependent)
+
+        return dependencies
+
+    def resolve_target_build_order(self, target):
+        dependencies = self.resolve_target_dependencies(target)
+        dependencies.append(target)
+        return dependencies
+
     def build(self):
-        logger.info("build")
+        for target in self.targets:
+            target, _, tag = target.partition(":")
+            build_order = self.resolve_target_build_order(target)
+            logger.info(build_order)
 
     def push(self):
         logger.info("push")
@@ -204,7 +241,6 @@ def main(args):
     image_tree.build()
     if options.push:
         image_tree.push()
-    breakpoint()
 
 
 def _main():
