@@ -4,21 +4,30 @@ targets:
   test:
     dockerfile: Dockerfile.test
     depends_on:
+      - test-wheels
       - app
 
   app:
     dockerfile: Dockerfile
     depends_on:
+      - app-wheels
       - base
-      - wheels
 
-  wheels:
-    dockerfile: Dockerfile.wheels
+  app-wheels:
+    dockerfile: Dockerfile.app-wheels
     depends_on:
       - tools
     watch_files:
-      - Dockerfile.wheels
-      - requirements.txt
+      - Dockerfile.app-wheels
+      - requirements-app.txt
+
+  test-wheels:
+    dockerfile: Dockerfile.test-wheels
+    depends_on:
+      - tools
+    watch_files:
+      - Dockerfile.test-wheels
+      - requirements-test.txt
 
   tools:
     dockerfile: Dockerfile.tools

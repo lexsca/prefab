@@ -18,35 +18,35 @@ DEFAULT_CONFIG_FILE = "prefab.yml"
 SHORT_DIGEST_SIZE = 12
 
 
-class PrefabError(Exception):
+class DockerPrefabError(Exception):
     pass
 
 
-class CircularDependencyError(PrefabError):
+class ImageAccessError(DockerPrefabError):
     pass
 
 
-class ImageAccessError(PrefabError):
+class ImageBuildError(DockerPrefabError):
     pass
 
 
-class ImageBuildError(PrefabError):
+class ImageNotFoundError(DockerPrefabError):
     pass
 
 
-class ImageNotFoundError(PrefabError):
+class ImagePushError(DockerPrefabError):
     pass
 
 
-class ImagePushError(PrefabError):
+class ImageVerifyError(DockerPrefabError):
     pass
 
 
-class ImageVerifyError(PrefabError):
+class TargetCyclicError(DockerPrefabError):
     pass
 
 
-class TargetNotFoundError(PrefabError):
+class TargetNotFoundError(DockerPrefabError):
     pass
 
 
@@ -154,7 +154,7 @@ class ImageTree:
     def resolve_target_dependencies(self, target, dependencies=None, vectors=None):
         targets = self.config.get("targets", {})
         if target not in targets:
-            raise TargetNotFoundError(f"{target} not found")
+            raise TargetNotFoundError(f"{target}: not found")
 
         if dependencies is None:
             dependencies = []
@@ -164,10 +164,12 @@ class ImageTree:
         for dependent in targets.get(target).get("depends_on", []):
             vector = (target, dependent)
             if vector in vectors:
-                raise CircularDependencyError(f"{target}: target loops to itself")
+                raise TargetCyclicError(f"{target}: has circular dependencies")
             else:
+                checkpoint = len(vectors)
                 vectors.append(vector)
                 self.resolve_target_dependencies(dependent, dependencies, vectors)
+                del vectors[checkpoint:]
 
             if dependent not in dependencies:
                 dependencies.append(dependent)
