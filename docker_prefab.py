@@ -1,7 +1,8 @@
 import argparse
-import hashlib
 import logging
 import sys
+import traceback
+from typing import Any, Dict, Generator, List, Optional, Tuple
 
 import docker
 import yaml
@@ -51,14 +52,18 @@ class TargetNotFoundError(DockerPrefabError):
 
 
 class Image:
-    def __init__(self, repo, tag, build_options=None):
-        self.repo = repo
-        self.tag = tag
-        self.build_options = build_options
-        self.docker_client = docker.from_env(version="auto")
+    def __init__(
+        self, repo: str, tag: str, build_options: Optional[Dict[str, Any]] = None
+    ):
+        self.repo: str = repo
+        self.tag: str = tag
+        self.build_options: Optional[Dict[str, Any]] = build_options
+        self.docker_client: docker.client.DockerClient = docker.from_env(version="auto")
 
     @staticmethod
-    def _process_transfer_log_stream(log_stream):
+    def _process_transfer_log_stream(
+        log_stream: Generator[Dict[str, Any], None, None]
+    ) -> None:
         for log_entry in log_stream:
             if "error" in log_entry:
                 raise ImageAccessError(log_entry["error"])
@@ -71,10 +76,10 @@ class Image:
             logger.info(message)
 
     @property
-    def name(self):
+    def name(self) -> str:
         return f"{self.repo}:{self.tag}"
 
-    def pull(self):
+    def pull(self) -> None:
         try:
             logger.info(f"Pulling {self.name}")
             log_stream = self.docker_client.api.pull(
@@ -86,8 +91,8 @@ class Image:
         except docker.errors.APIError as error:
             raise ImageAccessError(str(error))
 
-    def _build(self):
-        build_options = {
+    def _build(self) -> Generator[Dict[str, Any], None, None]:
+        build_options: Dict[str, Any] = {
             "dockerfile": "Dockerfile",
             "tag": self.name,
             "path": ".",
@@ -104,7 +109,7 @@ class Image:
             raise ImageBuildError(str(error))
         return log_stream
 
-    def build(self):
+    def build(self) -> None:
         log_stream = self._build()
         for log_entry in log_stream:
             if "error" in log_entry:
@@ -112,7 +117,7 @@ class Image:
             if message := log_entry.get("stream", "").strip():
                 logger.info(message)
 
-    def push(self):
+    def push(self) -> None:
         try:
             logger.info(f"Pushing {self.name}")
             log_stream = self.docker_client.images.push(
@@ -122,7 +127,7 @@ class Image:
         except docker.errors.APIError as error:
             raise ImagePushError(str(error))
 
-    def verify(self, label, value):
+    def verify(self, label: str, value: str) -> bool:
         image = self.docker_client.images.get(self.name)
         if image.labels.get(label) != value:
             raise ImageVerifyError(
@@ -132,13 +137,12 @@ class Image:
 
 
 class ImageTree:
-    def __init__(self, repo, targets, config):
-        self.repo = repo
-        self.targets = targets
-        self.config = config
-        self.images = {}
-        self.digests = {}
-        # TODO create tree of Image instances
+    def __init__(self, repo: str, targets: List[str], config: Dict[str, Any]) -> None:
+        self.repo: str = repo
+        self.targets: List[str] = targets
+        self.config: Dict[str, Any] = config
+        self.images: Dict[str, Any] = {}
+        self.digests: Dict[str, Any] = {}
 
         # roughed out build_options:
         # build_options: {
@@ -151,20 +155,20 @@ class ImageTree:
         #     }
         # }
 
-    def resolve_target_dependencies(self, target, dependencies=None, vectors=None):
+    def resolve_target_dependencies(
+        self,
+        target: str,
+        dependencies: List[str],
+        vectors: List[Tuple[str, str]],
+    ) -> List[str]:
         targets = self.config.get("targets", {})
         if target not in targets:
-            raise TargetNotFoundError(f"{target}: not found")
-
-        if dependencies is None:
-            dependencies = []
-        if vectors is None:
-            vectors = []
+            raise TargetNotFoundError(f"target '{target}' not found")
 
         for dependent in targets.get(target).get("depends_on", []):
             vector = (target, dependent)
             if vector in vectors:
-                raise TargetCyclicError(f"{target}: has circular dependencies")
+                raise TargetCyclicError(f"target '{target}' has circular dependencies")
             else:
                 checkpoint = len(vectors)
                 vectors.append(vector)
@@ -176,28 +180,30 @@ class ImageTree:
 
         return dependencies
 
-    def resolve_target_build_order(self, target):
-        dependencies = self.resolve_target_dependencies(target)
-        dependencies.append(target)
-        return dependencies
+    def resolve_target_build_order(self, target: str) -> List[str]:
+        build_order = self.resolve_target_dependencies(
+            target=target, dependencies=[], vectors=[]
+        )
+        build_order.append(target)
+        return build_order
 
-    def build(self):
+    def build(self) -> None:
         for target in self.targets:
             target, _, tag = target.partition(":")
             build_order = self.resolve_target_build_order(target)
             logger.info(build_order)
 
-    def push(self):
+    def push(self) -> None:
         logger.info("push")
 
 
-def parse_config(path):
+def parse_config(path: str) -> Dict[str, Any]:
     with open(path) as raw_config:
         config = yaml.safe_load(raw_config)
     return config
 
 
-def parse_options(args):
+def parse_options(args: List[str]) -> argparse.Namespace:
     description = "Efficiently build docker images"
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument(
@@ -236,7 +242,7 @@ def parse_options(args):
     return parser.parse_args(args)
 
 
-def main(args):
+def main(args: List[str]) -> None:
     options = parse_options(args)
     config = parse_config(options.config_file)
     image_tree = ImageTree(options.repo, options.targets, config)
@@ -245,9 +251,15 @@ def main(args):
         image_tree.push()
 
 
-def _main():
+def _main() -> None:
     if __name__ == "__main__":
-        main(sys.argv[1:])
+        try:
+            main(sys.argv[1:])
+            status = 0
+        except Exception:
+            logger.error(traceback.format_exc())
+            status = 1
+        sys.exit(status)
 
 
 _main()

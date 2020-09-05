@@ -19,7 +19,9 @@ format:
 	black .
 
 lint:
+	black --check --diff .
 	flake8 .
-	bandit .
+	bandit -r .
+	mypy --ignore-missing-imports --cache-dir=/dev/null .
 
 test: format lint
