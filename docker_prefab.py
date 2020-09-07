@@ -4,7 +4,7 @@ import hashlib
 import logging
 import sys
 import traceback
-from typing import Any, Dict, Generator, List, Tuple
+from typing import Any, Dict, Generator, List, Optional, Tuple
 
 import docker
 import yaml
@@ -14,8 +14,9 @@ logger = logging.getLogger(__name__)
 logger.handlers = [logging.StreamHandler()]
 logger.setLevel(logging.INFO)
 
-DEFAULT_ALGORITHM = "sha256"
-DEFAULT_LABEL = "prefab.digest"
+DEFAULT_HASH_ALGORITHM = "sha256"
+DEFAULT_DIGEST_LABEL = "prefab.digest"
+DEFAULT_TARGET_LABEL = "prefab.target"
 DEFAULT_CHUNK_SIZE = 65535
 DEFAULT_CONFIG_FILE = "prefab.yml"
 SHORT_DIGEST_SIZE = 12
@@ -45,10 +46,6 @@ class ImagePushError(DockerPrefabError):
     pass
 
 
-class ImageVerifyError(DockerPrefabError):
-    pass
-
-
 class InvalidConfigError(DockerPrefabError):
     pass
 
@@ -66,11 +63,21 @@ class TargetNotFoundError(DockerPrefabError):
 
 
 class Image:
-    def __init__(self, repo: str, tag: str, build_options: Dict[str, Any]):
+    def __init__(
+        self,
+        repo: str,
+        tag: str,
+        build_options: Dict[str, Any],
+        docker_client: Optional[docker.client.DockerClient] = None,
+    ) -> None:
         self.repo: str = repo
         self.tag: str = tag
         self.build_options: Dict[str, Any] = build_options
-        self.docker_client: docker.client.DockerClient = docker.from_env(version="auto")
+
+        if docker_client is None:
+            docker_client = docker.from_env(version="auto")
+
+        self.docker_client: docker.client.DockerClient = docker_client
 
     @staticmethod
     def _process_transfer_log_stream(
@@ -104,13 +111,14 @@ class Image:
             raise ImageAccessError(str(error))
 
     def _build(self) -> Generator[Dict[str, Any], None, None]:
+        # https://docker-py.readthedocs.io/en/stable/api.html#module-docker.api.build
         build_options: Dict[str, Any] = {
-            "dockerfile": "Dockerfile",
             "tag": self.name,
             "path": ".",
             "rm": True,
             "forcerm": True,
             "decode": True,
+            "squash": True,
         }
         if self.build_options is not None:
             build_options.update(self.build_options)
@@ -139,14 +147,6 @@ class Image:
         except docker.errors.APIError as error:
             raise ImagePushError(str(error))
 
-    def verify(self, label: str, value: str) -> bool:
-        image = self.docker_client.images.get(self.name)
-        if image.labels.get(label) != value:
-            raise ImageVerifyError(
-                f"{label}: expected {value}, got: {image.labels.get(label)}"
-            )
-        return True
-
 
 class ImageTree:
     def __init__(
@@ -156,7 +156,7 @@ class ImageTree:
         self.build_targets: List[str] = []
         self.build_config: Dict[str, Any] = build_config
         self.images: Dict[str, Image] = {}
-        self.digests: Dict[str, Any] = {}
+        self.digests: Dict[str, str] = {}
         self.tags: Dict[str, str] = {}
 
         for target in build_targets:
@@ -174,7 +174,7 @@ class ImageTree:
 
     def get_hasher(self):
         build_options = self.build_config.get("options", {})
-        hash_algorithm = build_options.get("hash_algorithm", DEFAULT_ALGORITHM)
+        hash_algorithm = build_options.get("hash_algorithm", DEFAULT_HASH_ALGORITHM)
 
         if hash_algorithm not in hashlib.algorithms_available:
             raise HashAlgorithmNotFound(f"{hash_algorithm} not found in hashlib")
@@ -182,11 +182,19 @@ class ImageTree:
 
         return hasher
 
-    def get_label_name(self):
+    def get_target_labels(self, target: str) -> Dict[str, str]:
         build_options = self.build_config.get("options", {})
-        label_name = build_options.get("prefab_label", DEFAULT_LABEL)
+        digest_label = build_options.get("prefab_digest_label", DEFAULT_DIGEST_LABEL)
+        target_label = build_options.get("prefab_target_label", DEFAULT_TARGET_LABEL)
 
-        return label_name
+        hasher = self.get_hasher()
+        digest = self.get_target_digest(target)
+        labels = {target_label: target}
+
+        if hasher and digest:
+            labels[digest_label] = f"{hasher.name}:{digest}"
+
+        return labels
 
     def get_file_digest(self, path: str, chunk_size: int = DEFAULT_CHUNK_SIZE) -> str:
         hasher = self.get_hasher()
@@ -200,7 +208,7 @@ class ImageTree:
 
     def _get_target_digest(self, target: str) -> str:
         hasher = self.get_hasher()
-        logger.info(f"target '{target}' creating digest")
+        logger.info(f"target '{target}' calculating digest")
 
         for path in self.get_target(target).get("watch_files", []):
             digest = self.get_file_digest(path)
@@ -211,19 +219,23 @@ class ImageTree:
         for dependent in self.get_target(target).get("depends_on", []):
             hasher.update(self.digests[dependent].encode())
             logger.info(
-                f"target '{target}' depends_on '{dependent}' digest: {self.digests[dependent]}"
+                f"target '{target}' depends_on '{dependent}' "
+                f"digest: {hasher.name}:{self.digests[dependent]}"
             )
 
         digest = hasher.hexdigest()
         logger.info(f"target '{target}' final digest: {hasher.name}:{digest}")
         return digest
 
-    def get_target_digest(self, target: str) -> str:
-        if target not in self.digests:
+    def get_target_digest(self, target: str) -> Optional[str]:
+        if target not in self.digests and self.get_target(target).get(
+            "watch_files", []
+        ):
             self.digests[target] = self._get_target_digest(target)
-        return self.digests[target]
 
-    def get_target_dependencies(
+        return self.digests.get(target)
+
+    def resolve_target_dependencies(
         self,
         target: str,
         dependencies: List[str],
@@ -236,7 +248,7 @@ class ImageTree:
             else:
                 checkpoint = len(vectors)
                 vectors.append(vector)
-                self.get_target_dependencies(dependent, dependencies, vectors)
+                self.resolve_target_dependencies(dependent, dependencies, vectors)
                 del vectors[checkpoint:]
 
             if dependent not in dependencies:
@@ -245,7 +257,7 @@ class ImageTree:
         return dependencies
 
     def get_target_build_order(self, target: str) -> List[str]:
-        build_order = self.get_target_dependencies(
+        build_order = self.resolve_target_dependencies(
             target=target, dependencies=[], vectors=[]
         )
         build_order.append(target)
@@ -254,8 +266,8 @@ class ImageTree:
 
     def get_target_tag(self, target: str) -> str:
         if target not in self.tags:
-            if self.get_target(target).get("watch_files", []):
-                digest = self.get_target_digest(target)
+            digest = self.get_target_digest(target)
+            if digest is not None:
                 self.tags[target] = digest[:SHORT_DIGEST_SIZE]
             else:
                 raise TargetTagError(
@@ -274,19 +286,10 @@ class ImageTree:
         return buildargs
 
     def get_target_build_options(self, target: str) -> Dict[str, Any]:
-        # https://docker-py.readthedocs.io/en/stable/api.html#module-docker.api.build
-        dockerfile = self.get_target(target)["dockerfile"]
-        label_name = self.get_label_name()
-        hasher = self.get_hasher()
-        digest = self.get_target_digest(target)
-        buildargs = self.get_target_buildargs(target)
-
         build_options: Dict[str, Any] = {
-            "dockerfile": dockerfile,
-            "labels": {
-                label_name: f"{hasher.name}:{digest}",
-            },
-            "buildargs": buildargs,
+            "dockerfile": self.get_target(target)["dockerfile"],
+            "labels": self.get_target_labels(target),
+            "buildargs": self.get_target_buildargs(target),
         }
 
         for key, value in self.get_target(target).get("build_options", {}):
