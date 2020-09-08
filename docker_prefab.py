@@ -98,6 +98,17 @@ class Image:
     def name(self) -> str:
         return f"{self.repo}:{self.tag}"
 
+    @property
+    def loaded(self) -> bool:
+        loaded = False
+
+        for image in self.docker_client.images.list(name=self.repo):
+            if self.name in image.attrs["RepoTags"]:
+                loaded = True
+                break
+
+        return loaded
+
     def pull(self) -> None:
         try:
             logger.info(f"Pulling {self.name}")
@@ -306,7 +317,8 @@ class ImageTree:
         image = Image(self.repo, tag, build_options)
 
         try:
-            image.pull()
+            if not image.loaded:
+                image.pull()
         except ImageNotFoundError:
             image.build()
         self.images[target] = image
