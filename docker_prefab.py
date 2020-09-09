@@ -4,7 +4,7 @@ import hashlib
 import logging
 import sys
 import traceback
-from typing import Any, Dict, Generator, List, Optional, Tuple
+from typing import Any, Dict, Generator, List, Optional, Tuple, Union
 
 import docker
 import yaml
@@ -69,19 +69,20 @@ class Image:
         tag: str,
         build_options: Dict[str, Any],
         docker_client: Optional[docker.client.DockerClient] = None,
+        logger: Union[logging.Logger, logging.LoggerAdapter] = logger,
     ) -> None:
         self.repo: str = repo
         self.tag: str = tag
         self.build_options: Dict[str, Any] = build_options
+        self.logger: Union[logging.Logger, logging.LoggerAdapter] = logger
 
         if docker_client is None:
             docker_client = docker.from_env(version="auto")
 
         self.docker_client: docker.client.DockerClient = docker_client
 
-    @staticmethod
     def _process_transfer_log_stream(
-        log_stream: Generator[Dict[str, Any], None, None]
+        self, log_stream: Generator[Dict[str, Any], None, None]
     ) -> None:
         for log_entry in log_stream:
             if "error" in log_entry:
@@ -92,7 +93,7 @@ class Image:
                 message = f"{log_entry.get('id')}: {log_entry.get('status')}"
             else:
                 message = log_entry["status"]
-            logger.info(message)
+            self.logger.info(message)
 
     @property
     def name(self) -> str:
@@ -111,7 +112,7 @@ class Image:
 
     def pull(self) -> None:
         try:
-            logger.info(f"Pulling {self.name}")
+            self.logger.info(f"{self.name} pulling")
             log_stream = self.docker_client.api.pull(
                 self.name, self.tag, stream=True, decode=True
             )
@@ -134,7 +135,7 @@ class Image:
         if self.build_options is not None:
             build_options.update(self.build_options)
         try:
-            logger.info(f"Building {self.name}")
+            self.logger.info(f"{self.name} building")
             log_stream = self.docker_client.api.build(**build_options)
         except docker.errors.APIError as error:
             raise ImageBuildError(str(error))
@@ -146,11 +147,11 @@ class Image:
             if "error" in log_entry:
                 raise ImageBuildError(log_entry["error"])
             if message := log_entry.get("stream", "").strip():
-                logger.info(message)
+                self.logger.info(message)
 
     def push(self) -> None:
         try:
-            logger.info(f"Pushing {self.name}")
+            self.logger.info(f"{self.name} pushing")
             log_stream = self.docker_client.images.push(
                 repository=self.repo, tag=self.tag, stream=True, decode=True
             )
@@ -219,23 +220,20 @@ class ImageTree:
 
     def _get_target_digest(self, target: str) -> str:
         hasher = self.get_hasher()
-        logger.info(f"target '{target}' calculating digest")
+        target_logger = target_logger_factory(target)
 
         for path in self.get_target(target).get("watch_files", []):
             digest = self.get_file_digest(path)
             hasher.update(digest.encode())
-            logger.info(
-                f"target '{target}' watch_file '{path}' digest: {hasher.name}:{digest}"
-            )
+            target_logger.info(f"watch_file '{path}' {hasher.name}:{digest}")
         for dependent in self.get_target(target).get("depends_on", []):
             hasher.update(self.digests[dependent].encode())
-            logger.info(
-                f"target '{target}' depends_on '{dependent}' "
-                f"digest: {hasher.name}:{self.digests[dependent]}"
+            target_logger.info(
+                f"depends_on '{dependent}' {hasher.name}:{self.digests[dependent]}"
             )
 
         digest = hasher.hexdigest()
-        logger.info(f"target '{target}' final digest: {hasher.name}:{digest}")
+        target_logger.info(f"final_digest {hasher.name}:{digest}")
         return digest
 
     def get_target_digest(self, target: str) -> Optional[str]:
@@ -314,12 +312,17 @@ class ImageTree:
     def _build_target(self, target: str) -> None:
         tag = self.get_target_tag(target)
         build_options = self.get_target_build_options(target)
-        image = Image(self.repo, tag, build_options)
+        target_logger = target_logger_factory(target)
+        image = Image(self.repo, tag, build_options, logger=target_logger)
 
         try:
-            if not image.loaded:
+            if image.loaded:
+                target_logger.info(f"{image.name} loaded")
+            else:
+                target_logger.info(f"{image.name} not loaded")
                 image.pull()
         except ImageNotFoundError:
+            target_logger.info(f"{image.name} not found")
             image.build()
         self.images[target] = image
 
@@ -330,15 +333,23 @@ class ImageTree:
     def build_all(self) -> None:
         for build_target in self.build_targets:
             build_order = self.get_target_build_order(build_target)
-            logger.info(
-                f"target '{build_target}' build order: {', '.join(build_order)}"
-            )
             for target in build_order:
                 self.build_target(target)
 
     def push_all(self) -> None:
         for image in self.images.values():
             image.push()
+
+
+class TargetLoggingAdapter(logging.LoggerAdapter):
+    def process(self, msg, kwargs):
+        return f"[{self.extra.get('target', '<none>')}] {msg}", kwargs
+
+
+def target_logger_factory(
+    target: str, logger: logging.Logger = logger
+) -> logging.LoggerAdapter:
+    return TargetLoggingAdapter(logger, extra={"target": target})
 
 
 def parse_options(args: List[str]) -> argparse.Namespace:
