@@ -1,8 +1,10 @@
 import argparse
+import datetime
 import functools
 import hashlib
 import logging
 import sys
+import time
 import traceback
 from typing import Any, Dict, Generator, List, Optional, Tuple, Union
 
@@ -125,12 +127,12 @@ class Image:
     def _build(self) -> Generator[Dict[str, Any], None, None]:
         # https://docker-py.readthedocs.io/en/stable/api.html#module-docker.api.build
         build_options: Dict[str, Any] = {
-            "tag": self.name,
+            "decode": True,
+            "forcerm": True,
             "path": ".",
             "rm": True,
-            "forcerm": True,
-            "decode": True,
             "squash": True,
+            "tag": self.name,
         }
         if self.build_options is not None:
             build_options.update(self.build_options)
@@ -148,6 +150,13 @@ class Image:
                 raise ImageBuildError(log_entry["error"])
             if message := log_entry.get("stream", "").strip():
                 self.logger.info(message)
+        self._prune_dangling_images()
+
+    def _prune_dangling_images(self):
+        try:
+            self.docker_client.api.prune_images(filters={"dangling": True})
+        except Exception as error:
+            self.logger.warning(f"prune dangling images failed: {error}")
 
     def push(self) -> None:
         try:
@@ -225,15 +234,15 @@ class ImageTree:
         for path in self.get_target(target).get("watch_files", []):
             digest = self.get_file_digest(path)
             hasher.update(digest.encode())
-            target_logger.info(f"watch_file '{path}' {hasher.name}:{digest}")
+            target_logger.info(f"watch_files {path} {hasher.name}:{digest}")
         for dependent in self.get_target(target).get("depends_on", []):
             hasher.update(self.digests[dependent].encode())
             target_logger.info(
-                f"depends_on '{dependent}' {hasher.name}:{self.digests[dependent]}"
+                f"depends_on {dependent} {hasher.name}:{self.digests[dependent]}"
             )
 
         digest = hasher.hexdigest()
-        target_logger.info(f"final_digest {hasher.name}:{digest}")
+        target_logger.info(f"prefab.digest {hasher.name}:{digest}")
         return digest
 
     def get_target_digest(self, target: str) -> Optional[str]:
@@ -438,6 +447,7 @@ def parse_config(path: str) -> Dict[str, Any]:
 
 
 def main(args: List[str]) -> None:
+    start_time = time.monotonic()
     options = parse_options(args)
     config = parse_config(options.config_file)
 
@@ -446,6 +456,9 @@ def main(args: List[str]) -> None:
 
     if options.push:
         image_tree.push_all()
+
+    elapsed_time = int(time.monotonic() - start_time)
+    logger.info(f"elapsed time: {datetime.timedelta(seconds=elapsed_time)}")
 
 
 def _main() -> None:
