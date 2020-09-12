@@ -485,6 +485,9 @@ def _main() -> None:
         try:
             main(sys.argv[1:])
             status = 0
+        except DockerPrefabError as error:
+            logger.error(f"{type(error).__name__}: {error}")
+            status = 1
         except Exception:
             logger.error(traceback.format_exc())
             status = 1
