@@ -6,7 +6,7 @@ import logging
 import sys
 import time
 import traceback
-from typing import Any, Dict, Generator, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Generator, List, Optional, Tuple, Union
 
 import docker
 import yaml
@@ -21,6 +21,7 @@ DEFAULT_DIGEST_LABEL = "prefab.digest"
 DEFAULT_TARGET_LABEL = "prefab.target"
 DEFAULT_CHUNK_SIZE = 65535
 DEFAULT_CONFIG_FILE = "prefab.yml"
+DEFAULT_ALLOW_PULL_ERRORS = ["ImageNotFoundError", "ImageAccessError"]
 SHORT_DIGEST_SIZE = 12
 
 
@@ -114,15 +115,15 @@ class Image:
 
     def pull(self) -> None:
         try:
-            self.logger.info(f"{self.name} pulling")
+            self.logger.info(f"{self.name} Trying pull...")
             log_stream = self.docker_client.api.pull(
                 self.name, self.tag, stream=True, decode=True
             )
             self._process_transfer_log_stream(log_stream)
         except docker.errors.NotFound as error:
-            raise ImageNotFoundError(str(error))
+            raise ImageNotFoundError(error.explanation)
         except docker.errors.APIError as error:
-            raise ImageAccessError(str(error))
+            raise ImageAccessError(error.explanation)
 
     def _build(self) -> Generator[Dict[str, Any], None, None]:
         # https://docker-py.readthedocs.io/en/stable/api.html#module-docker.api.build
@@ -137,7 +138,7 @@ class Image:
         if self.build_options is not None:
             build_options.update(self.build_options)
         try:
-            self.logger.info(f"{self.name} building")
+            self.logger.info(f"{self.name} Trying build...")
             log_stream = self.docker_client.api.build(**build_options)
         except docker.errors.APIError as error:
             raise ImageBuildError(str(error))
@@ -171,11 +172,16 @@ class Image:
 
 class ImageTree:
     def __init__(
-        self, repo: str, build_targets: List[str], build_config: Dict[str, Any]
+        self,
+        repo: str,
+        build_targets: List[str],
+        build_config: Dict[str, Any],
+        image_factory: Callable = Image,
     ) -> None:
         self.repo: str = repo
         self.build_targets: List[str] = []
         self.build_config: Dict[str, Any] = build_config
+        self.image_factory: Callable = image_factory
         self.images: Dict[str, Image] = {}
         self.digests: Dict[str, str] = {}
         self.tags: Dict[str, str] = {}
@@ -193,9 +199,11 @@ class ImageTree:
 
         return targets[target]
 
+    def get_option(self, name: str, default: Any) -> Any:
+        return self.build_config.get("options", {}).get(name, default)
+
     def get_hasher(self):
-        build_options = self.build_config.get("options", {})
-        hash_algorithm = build_options.get("hash_algorithm", DEFAULT_HASH_ALGORITHM)
+        hash_algorithm = self.get_option("hash_algorithm", DEFAULT_HASH_ALGORITHM)
 
         if hash_algorithm not in hashlib.algorithms_available:
             raise HashAlgorithmNotFound(f"{hash_algorithm} not found in hashlib")
@@ -203,10 +211,14 @@ class ImageTree:
 
         return hasher
 
+    def get_allow_pull_errors(self):
+        names = self.get_option("allow_pull_errors", DEFAULT_ALLOW_PULL_ERRORS)
+        symbols = globals()
+        return tuple(symbols.get(name) for name in names if name in symbols)
+
     def get_target_labels(self, target: str) -> Dict[str, str]:
-        build_options = self.build_config.get("options", {})
-        digest_label = build_options.get("prefab_digest_label", DEFAULT_DIGEST_LABEL)
-        target_label = build_options.get("prefab_target_label", DEFAULT_TARGET_LABEL)
+        digest_label = self.get_option("prefab_digest_label", DEFAULT_DIGEST_LABEL)
+        target_label = self.get_option("prefab_target_label", DEFAULT_TARGET_LABEL)
 
         hasher = self.get_hasher()
         digest = self.get_target_digest(target)
@@ -322,17 +334,22 @@ class ImageTree:
         tag = self.get_target_tag(target)
         build_options = self.get_target_build_options(target)
         target_logger = target_logger_factory(target)
-        image = Image(self.repo, tag, build_options, logger=target_logger)
+        image = self.image_factory(self.repo, tag, build_options, logger=target_logger)
 
         try:
             if image.loaded:
-                target_logger.info(f"{image.name} loaded")
+                target_logger.info(f"{image.name} Loaded")
             else:
-                target_logger.info(f"{image.name} not loaded")
+                target_logger.info(f"{image.name} Not loaded")
                 image.pull()
-        except ImageNotFoundError:
-            target_logger.info(f"{image.name} not found")
-            image.build()
+        except Exception as error:
+            if isinstance(error, self.get_allow_pull_errors()):
+                error_name = type(error).__name__
+                target_logger.info(f"{image.name} {error_name}: {error}")
+                target_logger.info(
+                    f"{image.name} {error_name} in allow_pull_errors, continuing..."
+                )
+                image.build()
         self.images[target] = image
 
     def build_target(self, target: str) -> None:
