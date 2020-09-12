@@ -338,9 +338,9 @@ class ImageTree:
 
         try:
             if image.loaded:
-                target_logger.info(f"{image.name} Loaded")
+                target_logger.info(f"{image.name} Image loaded")
             else:
-                target_logger.info(f"{image.name} Not loaded")
+                target_logger.info(f"{image.name} Image not loaded")
                 image.pull()
         except Exception as error:
             if isinstance(error, self.get_allow_pull_errors()):
