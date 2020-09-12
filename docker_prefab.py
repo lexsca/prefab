@@ -350,6 +350,8 @@ class ImageTree:
                     f"{image.name} {error_name} in allow_pull_errors, continuing..."
                 )
                 image.build()
+            else:
+                raise
         self.images[target] = image
 
     def build_target(self, target: str) -> None:
