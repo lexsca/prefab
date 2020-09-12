@@ -1,0 +1,7 @@
+__pycache__
+.mypy_cache
+*.pyc
+.coverage
+.*.sw?
+.python-version
+.DS_Store
