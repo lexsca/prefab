@@ -528,21 +528,22 @@ def elapsed_time(monotonic_start: float) -> str:
 
 
 def main(args: List[str]) -> None:
-    build_start = time.monotonic()
+    build_start_time = time.monotonic()
 
     options = parse_options(args)
+    logger.info(f"Called with args: {' '.join(args)}")
     config = Config.from_yaml_filepath(options.config_file)
 
     image_factory = ImageFactory(config, options.repo, options.tags)
     image_tree = ImageTree(config, image_factory, options.noop)
     image_tree.build(options.targets)
-    logger.info(f"Build elapsed time: {elapsed_time(build_start)}")
+    logger.info(f"Build elapsed time: {elapsed_time(build_start_time)}")
 
     if options.push:
-        push_start = time.monotonic()
+        push_start_time = time.monotonic()
         image_tree.push()
-        logger.info(f"Push elapsed time: {elapsed_time(push_start)}")
-        logger.info(f"Total elapsed time: {elapsed_time(build_start)}")
+        logger.info(f"Push elapsed time: {elapsed_time(push_start_time)}")
+        logger.info(f"Total elapsed time: {elapsed_time(build_start_time)}")
 
 
 def _main() -> None:
