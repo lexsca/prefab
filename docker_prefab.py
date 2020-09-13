@@ -24,8 +24,8 @@ DEFAULT_BUILD_OPTIONS: Dict[str, Any] = {
     "forcerm": True,
     "path": ".",
     "rm": True,
-    "squash": True,
 }
+DEFAULT_BUILDARG_PREFIX = "prefab_"
 DEFAULT_CONFIG_FILE = "prefab.yml"
 DEFAULT_DIGEST_LABEL = "prefab.digest"
 DEFAULT_HASH_ALGORITHM = "sha256"
@@ -106,6 +106,10 @@ class Config(collections.UserDict):
         allow_names = self.get_option("allow_pull_errors", DEFAULT_ALLOW_PULL_ERRORS)
         symbols = globals()
         return tuple(symbols[name] for name in allow_names if name in symbols)
+
+    @property
+    def buildarg_prefix(self) -> str:
+        return str(self.get_option("buildarg_prefix", DEFAULT_BUILDARG_PREFIX))
 
     @property
     def digest_label(self) -> str:
@@ -263,17 +267,20 @@ class ImageFactory:
         self.digests: Dict[str, str] = dict()
 
     def __call__(self, target: str) -> Image:
+        target_logger = self.get_target_logger(target)
+        target_logger.info("Preparing target config...")
+
         image = Image(
             repo=self.repo,
             tag=self.get_target_tag(target),
             build_options=self.get_target_build_options(target),
-            logger=self.get_target_logger(target),
+            logger=target_logger,
         )
 
         lines = json.dumps(image.build_options, sort_keys=True, indent=4).splitlines()
-        image.logger.info(f"build_options {lines.pop(0)}")
+        target_logger.info(f"build_options {lines.pop(0)}")
         for line in lines:
-            image.logger.info(line)
+            target_logger.info(line)
 
         return image
 
@@ -350,7 +357,7 @@ class ImageFactory:
         buildargs = {}
 
         for dependent in self.config.get_target(target).get("depends_on", []):
-            arg = f"prefab_{dependent}"
+            arg = f"{self.config.buildarg_prefix}{dependent}"
             value = f"{self.repo}:{self.get_target_tag(dependent)}"
             buildargs[arg] = value
 
@@ -368,7 +375,7 @@ class ImageFactory:
             },
         }
 
-        for key, value in build_config.get("build_options", {}):
+        for key, value in build_config.get("build_options", {}).items():
             if key in {"labels", "buildargs"}:
                 build_options[key].update(value)
             else:
@@ -398,7 +405,7 @@ class ImageTree:
         for dependent in self.config.get_target(target).get("depends_on", []):
             vector = (target, dependent)
             if vector in vectors:
-                raise TargetCyclicError(f"target '{target}' has circular dependencies")
+                raise TargetCyclicError(f"Target [{target}] has circular dependencies")
             else:
                 checkpoint = len(vectors)
                 vectors.append(vector)
@@ -414,6 +421,7 @@ class ImageTree:
         dependencies = self._resolve_target_dependencies(
             target=target, dependencies=[], vectors=[]
         )
+        logger.info(f"Target [{target}] depends on: {', '.join(dependencies)}")
         dependencies.append(target)
 
         return dependencies
@@ -432,8 +440,7 @@ class ImageTree:
                 image.logger.info(f"{image.name} Image not loaded")
                 image.pull()
         except Exception as error:
-            allow_errors = self.config.allow_pull_errors
-            if isinstance(error, allow_errors):
+            if isinstance(error, self.config.allow_pull_errors):
                 error_name = type(error).__name__
                 image.logger.info(f"{image.name} {error_name}: {error}")
                 image.logger.info(
@@ -460,7 +467,7 @@ class ImageTree:
 
 
 def parse_options(args: List[str]) -> argparse.Namespace:
-    description = "Efficiently build docker images"
+    description = "Efficiently build container images"
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument(
         "--config",
@@ -515,8 +522,13 @@ def parse_options(args: List[str]) -> argparse.Namespace:
     return options
 
 
+def elapsed_time(monotonic_start: float) -> str:
+    elapsed_time = datetime.timedelta(seconds=time.monotonic() - monotonic_start)
+    return str(elapsed_time)[:-4]
+
+
 def main(args: List[str]) -> None:
-    start_time = time.monotonic()
+    build_start = time.monotonic()
 
     options = parse_options(args)
     config = Config.from_yaml_filepath(options.config_file)
@@ -524,12 +536,13 @@ def main(args: List[str]) -> None:
     image_factory = ImageFactory(config, options.repo, options.tags)
     image_tree = ImageTree(config, image_factory, options.noop)
     image_tree.build(options.targets)
+    logger.info(f"Build elapsed time: {elapsed_time(build_start)}")
 
     if options.push:
+        push_start = time.monotonic()
         image_tree.push()
-
-    elapsed = datetime.timedelta(seconds=time.monotonic() - start_time)
-    logger.info(f"Elapsed time: {str(elapsed)[:-4]}")
+        logger.info(f"Push elapsed time: {elapsed_time(push_start)}")
+        logger.info(f"Total elapsed time: {elapsed_time(build_start)}")
 
 
 def _main() -> None:
