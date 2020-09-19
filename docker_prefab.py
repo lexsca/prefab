@@ -93,13 +93,20 @@ class Config(collections.UserDict):
     def get_option(self, name: str, default: Any) -> Any:
         return self.data.get("options", {}).get(name, default)
 
-    def get_target(self, target: str) -> Dict[str, Any]:
-        targets = self.data.get("targets", {})
+    def get_target(self, name: str) -> Dict[str, Any]:
+        target = self.data.get("targets", {}).get(name)
 
-        if target not in targets:
-            raise TargetNotFoundError(f"target '{target}' not found in build config")
+        if target is None:
+            raise TargetNotFoundError(f"Target [{name}] not found in build config")
 
-        return targets[target]
+        for key in ["depends_on", "watch_files"]:
+            if key not in target:
+                target[key] = []
+
+        if "build_options" not in target:
+            target["build_options"] = {}
+
+        return target
 
     @property
     def allow_pull_errors(self) -> Tuple[Any, ...]:
@@ -178,6 +185,8 @@ class Image:
         self.tag: str = tag
         self.build_options: Dict[str, Any] = build_options
         self.logger: Union[logging.Logger, logging.LoggerAdapter] = logger
+        self._loaded: Optional[bool] = None
+        self.pulled = False
 
         if docker_client is None:
             docker_client = docker.from_env(version="auto")
@@ -204,22 +213,24 @@ class Image:
 
     @property
     def loaded(self) -> bool:
-        loaded = False
+        if self._loaded is None:
+            self._loaded = False
 
-        for image in self.docker_client.images.list(name=self.repo):
-            if self.name in image.attrs["RepoTags"]:
-                loaded = True
-                break
+            for image in self.docker_client.images.list(name=self.repo):
+                if self.name in image.attrs["RepoTags"]:
+                    self._loaded = True
+                    break
 
-        return loaded
+        return self._loaded
 
     def pull(self) -> None:
         try:
-            self.logger.info(f"{self.name} Trying pull...")
             log_stream = self.docker_client.api.pull(
                 self.name, self.tag, stream=True, decode=True
             )
             self._process_transfer_log_stream(log_stream)
+            self._loaded = True
+            self.pulled = True
         except docker.errors.NotFound as error:
             raise ImageNotFoundError(error.explanation)
         except docker.errors.APIError as error:
@@ -227,7 +238,6 @@ class Image:
 
     def _build(self) -> Generator[Dict[str, Any], None, None]:
         try:
-            self.logger.info(f"{self.name} Trying build...")
             log_stream = self.docker_client.api.build(**self.build_options)
         except docker.errors.APIError as error:
             raise ImageBuildError(str(error))
@@ -235,22 +245,24 @@ class Image:
 
     def build(self) -> None:
         log_stream = self._build()
+
         for log_entry in log_stream:
             if "error" in log_entry:
                 raise ImageBuildError(log_entry["error"])
             if message := log_entry.get("stream", "").strip():
                 self.logger.info(message)
+
+        self._loaded = True
         self._prune_dangling_images()
 
     def _prune_dangling_images(self):
         try:
             self.docker_client.api.prune_images(filters={"dangling": True})
         except Exception as error:
-            self.logger.warning(f"prune dangling images failed: {error}")
+            self.logger.warning(f"Prune dangling images failed: {error}")
 
     def push(self) -> None:
         try:
-            self.logger.info(f"{self.name} Trying push...")
             log_stream = self.docker_client.images.push(
                 repository=self.repo, tag=self.tag, stream=True, decode=True
             )
@@ -260,29 +272,26 @@ class Image:
 
 
 class ImageFactory:
-    def __init__(self, config: Config, repo: str, tags: Dict[str, str]) -> None:
+    def __init__(
+        self,
+        config: Config,
+        repo: str,
+        tags: Dict[str, str],
+        image_constructor: Callable = Image,
+    ) -> None:
         self.config: Config = config
         self.repo: str = repo
         self.tags: Dict[str, str] = tags
+        self.image_constructor: Callable = image_constructor
         self.digests: Dict[str, str] = dict()
 
     def __call__(self, target: str) -> Image:
-        target_logger = self.get_target_logger(target)
-        target_logger.info("Preparing target config...")
-
-        image = Image(
+        return self.image_constructor(
             repo=self.repo,
             tag=self.get_target_tag(target),
             build_options=self.get_target_build_options(target),
-            logger=target_logger,
+            logger=self.get_target_logger(target),
         )
-
-        lines = json.dumps(image.build_options, sort_keys=True, indent=4).splitlines()
-        target_logger.info(f"build_options {lines.pop(0)}")
-        for line in lines:
-            target_logger.info(line)
-
-        return image
 
     def get_target_logger(self, target: str) -> TargetLoggerAdapter:
         return TargetLoggerAdapter(logger, extra={"target": target})
@@ -308,27 +317,26 @@ class ImageFactory:
 
     def _get_target_digest(self, target: str) -> str:
         hasher = self.get_hasher()
-        logger = self.get_target_logger(target)
+        target_logger = self.get_target_logger(target)
 
-        for path in self.config.get_target(target).get("watch_files", []):
+        for path in self.config.get_target(target)["watch_files"]:
             digest = self.get_file_digest(path)
             hasher.update(digest.encode())
-            logger.info(f"watch_files {path} {hasher.name}:{digest}")
-        for dependent in self.config.get_target(target).get("depends_on", []):
+            target_logger.info(f"watch_files {path} {hasher.name}:{digest}")
+
+        for dependent in self.config.get_target(target)["depends_on"]:
             hasher.update(self.digests[dependent].encode())
-            logger.info(
+            target_logger.info(
                 f"depends_on {dependent} {hasher.name}:{self.digests[dependent]}"
             )
 
         digest = hasher.hexdigest()
-        logger.info(f"target_digest {hasher.name}:{digest}")
+        target_logger.info(f"target_digest {hasher.name}:{digest}")
 
         return digest
 
     def get_target_digest(self, target: str) -> Optional[str]:
-        if target not in self.digests and self.config.get_target(target).get(
-            "watch_files", []
-        ):
+        if target not in self.digests and self.config.get_target(target)["watch_files"]:
             self.digests[target] = self._get_target_digest(target)
 
         return self.digests.get(target)
@@ -340,7 +348,7 @@ class ImageFactory:
                 self.tags[target] = digest[: self.config.short_digest_size]
             else:
                 raise TargetTagError(
-                    f"target '{target}' has no watch_files and no explicit tag"
+                    f"Target [{target}] has no watch_files and no explicit tag"
                 )
         return self.tags[target]
 
@@ -356,7 +364,7 @@ class ImageFactory:
     def get_target_buildargs(self, target: str) -> Dict[str, str]:
         buildargs = {}
 
-        for dependent in self.config.get_target(target).get("depends_on", []):
+        for dependent in self.config.get_target(target)["depends_on"]:
             arg = f"{self.config.buildarg_prefix}{dependent}"
             value = f"{self.repo}:{self.get_target_tag(dependent)}"
             buildargs[arg] = value
@@ -389,19 +397,25 @@ class ImageTree:
         self,
         config: Config,
         image_factory: Callable,
-        noop: bool = False,
     ) -> None:
         self.config: Config = config
         self.image_factory: Callable = image_factory
         self.images: Dict[str, Image] = {}
-        self.noop: bool = noop
 
-    def _resolve_target_dependencies(
-        self,
-        target: str,
-        dependencies: List[str],
-        vectors: List[Tuple[str, str]],
-    ) -> List[str]:
+    def configure_target_image(self, target: str):
+        if target not in self.images:
+            image = self.images[target] = self.image_factory(target)
+            image.logger.info(f"target_image {image.name}")
+
+    def resolve_dependency_graph(
+        self, target: str, vectors: Optional[List[Tuple[str, str]]] = None
+    ):
+        # use a depth-first search to unroll dependencies and detect loops.
+        # targets have a directed dependency stream. if an upstream target
+        # dependency changes, downstream dependencies also change.
+        if vectors is None:
+            vectors = []
+
         for dependent in self.config.get_target(target).get("depends_on", []):
             vector = (target, dependent)
             if vector in vectors:
@@ -409,36 +423,19 @@ class ImageTree:
             else:
                 checkpoint = len(vectors)
                 vectors.append(vector)
-                self._resolve_target_dependencies(dependent, dependencies, vectors)
+                self.resolve_dependency_graph(dependent, vectors)
                 del vectors[checkpoint:]
 
-            if dependent not in dependencies:
-                dependencies.append(dependent)
+        self.configure_target_image(target)
 
-        return dependencies
+    def pull_target_image(self, target: str) -> bool:
+        image = self.images[target]
+        loaded = False
 
-    def resolve_target_dependencies(self, target: str) -> List[str]:
-        dependencies = self._resolve_target_dependencies(
-            target=target, dependencies=[], vectors=[]
-        )
-        logger.info(f"Target [{target}] depends on: {', '.join(dependencies)}")
-        dependencies.append(target)
-
-        return dependencies
-
-    def resolve_target_images(self, target: str) -> Generator[Image, None, None]:
-        for dependency in self.resolve_target_dependencies(target):
-            if dependency not in self.images:
-                self.images[dependency] = self.image_factory(dependency)
-                yield self.images[dependency]
-
-    def _build(self, image: Image) -> None:
         try:
-            if image.loaded:
-                image.logger.info(f"{image.name} Image loaded")
-            else:
-                image.logger.info(f"{image.name} Image not loaded")
-                image.pull()
+            image.logger.info(f"{image.name} Trying pull...")
+            image.pull()
+            loaded = True
         except Exception as error:
             if isinstance(error, self.config.allow_pull_errors):
                 error_name = type(error).__name__
@@ -446,24 +443,64 @@ class ImageTree:
                 image.logger.info(
                     f"{image.name} {error_name} in allow_pull_errors, continuing..."
                 )
-                image.build()
-            else:
-                raise
+
+        return loaded
+
+    def load_target_image(self, target: str) -> bool:
+        image = self.images[target]
+        loaded = False
+
+        if image.loaded:
+            image.logger.info(f"{image.name} Image loaded")
+            loaded = True
+        else:
+            image.logger.info(f"{image.name} Image not loaded")
+            loaded = self.pull_target_image(target)
+
+        return loaded
+
+    @staticmethod
+    def display_image_build_options(image: Image) -> None:
+        json_text = json.dumps(image.build_options, sort_keys=True, indent=4)
+        json_lines = json_text.splitlines()
+        image.logger.info(f"{image.name} build_options {json_lines.pop(0)}")
+
+        for line in json_lines:
+            image.logger.info(line)
+
+    def build_target_image(self, target: str) -> None:
+        # use a breadth-first search to build images. this helps avoid
+        # unnecessarily loading or building images that aren't needed.
+        if not self.load_target_image(target):
+            image = self.images[target]
+
+            if dependencies := self.config.get_target(target)["depends_on"]:
+                image.logger.info(f"{image.name} Depends on: {', '.join(dependencies)}")
+
+                for dependent in dependencies:
+                    self.build_target_image(dependent)
+
+            image.logger.info(f"{image.name} Trying build...")
+            self.display_image_build_options(image)
+            image.build()
 
     def build(self, targets: List[str]) -> None:
+        logger.info("\nResolving dependency graph...")
         for target in targets:
-            for image in self.resolve_target_images(target):
-                if self.noop:
-                    image.logger.info(f"{image.name} Trying build... [DRY RUN]")
-                else:
-                    self._build(image)
+            self.resolve_dependency_graph(target)
+
+        logger.info("\nBuilding target images...")
+        for target in targets:
+            self.build_target_image(target)
 
     def push(self) -> None:
         for image in self.images.values():
-            if self.noop:
-                image.logger.info(f"{image.name} Trying push... [DRY RUN]")
-            else:
-                image.push()
+            if image.loaded:
+                if image.pulled:
+                    image.logger.info(f"{image.name} Skipping push of pulled image")
+                else:
+                    image.logger.info(f"{image.name} Trying push...")
+                    image.push()
 
 
 def parse_options(args: List[str]) -> argparse.Namespace:
@@ -535,7 +572,7 @@ def main(args: List[str]) -> None:
     config = Config.from_yaml_filepath(options.config_file)
 
     image_factory = ImageFactory(config, options.repo, options.tags)
-    image_tree = ImageTree(config, image_factory, options.noop)
+    image_tree = ImageTree(config, image_factory)
     image_tree.build(options.targets)
     logger.info(f"Build elapsed time: {elapsed_time(build_start_time)}")
 
