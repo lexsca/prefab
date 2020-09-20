@@ -18,7 +18,11 @@ logger = logging.getLogger(__name__)
 logger.handlers = [logging.StreamHandler()]
 logger.setLevel(logging.INFO)
 
-DEFAULT_ALLOW_PULL_ERRORS: List[str] = ["ImageNotFoundError", "ImageAccessError"]
+DEFAULT_ALLOW_PULL_ERRORS: List[str] = [
+    "ImageAccessError",
+    "ImageNotFoundError",
+    "ImageValidationError",
+]
 DEFAULT_BUILD_OPTIONS: Dict[str, Any] = {
     "decode": True,
     "forcerm": True,
@@ -55,6 +59,10 @@ class ImageNotFoundError(DockerPrefabError):
 
 
 class ImagePushError(DockerPrefabError):
+    pass
+
+
+class ImageValidationError(DockerPrefabError):
     pass
 
 
@@ -138,15 +146,7 @@ class Config(collections.UserDict):
     def target_label(self) -> str:
         return str(self.get_option("target_label", DEFAULT_TARGET_LABEL))
 
-    def validate_target(self, target: str) -> None:
-        config = self.data["targets"][target]
-
-        if not isinstance(config, dict):
-            raise InvalidConfigError(f"{target}: dict expected for target config")
-
-        if "dockerfile" not in config or not isinstance(config["dockerfile"], str):
-            raise InvalidConfigError(f"{target}: dockerfile required in target config")
-
+    def validate_target_config(self, target: str, config: Dict[str, Any]) -> None:
         if not isinstance(config.get("depends_on", []), list):
             raise InvalidConfigError(f"{target}: list expected for target depends_on")
 
@@ -157,6 +157,17 @@ class Config(collections.UserDict):
             raise InvalidConfigError(
                 f"{target}: dict expected for target build_options"
             )
+
+    def validate_target(self, target: str) -> None:
+        config = self.data["targets"][target]
+
+        if not isinstance(config, dict):
+            raise InvalidConfigError(f"{target}: dict expected for target config")
+
+        if "dockerfile" not in config or not isinstance(config["dockerfile"], str):
+            raise InvalidConfigError(f"{target}: dockerfile required in target config")
+
+        self.validate_target_config(target, config)
 
     def validate_config(self) -> None:
         if "targets" not in self.data:
@@ -186,12 +197,21 @@ class Image:
         self.build_options: Dict[str, Any] = build_options
         self.logger: Union[logging.Logger, logging.LoggerAdapter] = logger
         self._loaded: Optional[bool] = None
-        self.pulled = False
+        self.was_pulled: bool = False
+        self.was_built: bool = False
 
         if docker_client is None:
             docker_client = docker.from_env(version="auto")
 
         self.docker_client: docker.client.DockerClient = docker_client
+
+    def _log_transfer_message(self, log_entry) -> None:
+        if "id" in log_entry:
+            message = f"{log_entry.get('id')}: {log_entry.get('status')}"
+        else:
+            message = str(log_entry["status"])
+
+        self.logger.info(message)
 
     def _process_transfer_log_stream(
         self, log_stream: Generator[Dict[str, Any], None, None]
@@ -199,13 +219,21 @@ class Image:
         for log_entry in log_stream:
             if "error" in log_entry:
                 raise ImageAccessError(log_entry["error"])
+
             if "status" not in log_entry or log_entry.get("progressDetail"):
                 continue
-            if "id" in log_entry:
-                message = f"{log_entry.get('id')}: {log_entry.get('status')}"
-            else:
-                message = log_entry["status"]
-            self.logger.info(message)
+
+            self._log_transfer_message(log_entry)
+
+    def _get_docker_image(self) -> Optional[docker.models.images.Image]:
+        docker_image = None
+
+        for image in self.docker_client.images.list(name=self.repo):
+            if self.name in image.tags:
+                docker_image = image
+                break
+
+        return docker_image
 
     @property
     def name(self) -> str:
@@ -214,12 +242,7 @@ class Image:
     @property
     def loaded(self) -> bool:
         if self._loaded is None:
-            self._loaded = False
-
-            for image in self.docker_client.images.list(name=self.repo):
-                if self.name in image.attrs["RepoTags"]:
-                    self._loaded = True
-                    break
+            self._loaded = bool(self._get_docker_image())
 
         return self._loaded
 
@@ -230,11 +253,24 @@ class Image:
             )
             self._process_transfer_log_stream(log_stream)
             self._loaded = True
-            self.pulled = True
+            self.was_pulled = True
         except docker.errors.NotFound as error:
             raise ImageNotFoundError(error.explanation)
         except docker.errors.APIError as error:
             raise ImageAccessError(error.explanation)
+
+    def validate(self) -> None:
+        docker_image = self._get_docker_image()
+
+        if docker_image is None:
+            raise ImageNotFoundError(f"{self.name} unable to find for validation")
+
+        for name, expected in self.build_options["labels"].items():
+            result = docker_image.labels.get(name)
+            if result != expected:
+                raise ImageValidationError(
+                    f"label {name} expected {expected}, got {result}"
+                )
 
     def _build(self) -> Generator[Dict[str, Any], None, None]:
         try:
@@ -252,6 +288,7 @@ class Image:
             if message := log_entry.get("stream", "").strip():
                 self.logger.info(message)
 
+        self.was_built = True
         self._loaded = True
         self._prune_dangling_images()
 
@@ -393,29 +430,25 @@ class ImageFactory:
 
 
 class ImageTree:
-    def __init__(
-        self,
-        config: Config,
-        image_factory: Callable,
-    ) -> None:
+    def __init__(self, config: Config, image_factory: Callable) -> None:
         self.config: Config = config
         self.image_factory: Callable = image_factory
         self.images: Dict[str, Image] = {}
+        self.targets: Dict[str, List[Image]] = {}
 
-    def configure_target_image(self, target: str):
+    def configure_target_image(self, target: str) -> Image:
         if target not in self.images:
             image = self.images[target] = self.image_factory(target)
             image.logger.info(f"target_image {image.name}")
 
-    def resolve_dependency_graph(
-        self, target: str, vectors: Optional[List[Tuple[str, str]]] = None
-    ):
+        return self.images[target]
+
+    def _resolve_target_images(
+        self, target: str, images: List[Image], vectors: List[Tuple[str, str]]
+    ) -> List[Image]:
         # use a depth-first search to unroll dependencies and detect loops.
         # targets have a directed dependency stream. if an upstream target
         # dependency changes, downstream dependencies also change.
-        if vectors is None:
-            vectors = []
-
         for dependent in self.config.get_target(target).get("depends_on", []):
             vector = (target, dependent)
             if vector in vectors:
@@ -423,41 +456,44 @@ class ImageTree:
             else:
                 checkpoint = len(vectors)
                 vectors.append(vector)
-                self.resolve_dependency_graph(dependent, vectors)
+                self._resolve_target_images(dependent, images, vectors)
                 del vectors[checkpoint:]
 
-        self.configure_target_image(target)
+        image = self.configure_target_image(target)
+        if image not in images:
+            images.append(image)
 
-    def pull_target_image(self, target: str) -> bool:
-        image = self.images[target]
-        loaded = False
+        return images
 
+    def resolve_target_images(self, target: str) -> List[Image]:
+        return self._resolve_target_images(target=target, images=[], vectors=[])
+
+    def pull_target_image(self, image: Image) -> None:
         try:
             image.logger.info(f"{image.name} Trying pull...")
             image.pull()
-            loaded = True
         except Exception as error:
-            if isinstance(error, self.config.allow_pull_errors):
+            if not isinstance(error, self.config.allow_pull_errors):
+                raise
+            else:
                 error_name = type(error).__name__
                 image.logger.info(f"{image.name} {error_name}: {error}")
                 image.logger.info(
                     f"{image.name} {error_name} in allow_pull_errors, continuing..."
                 )
 
-        return loaded
-
-    def load_target_image(self, target: str) -> bool:
-        image = self.images[target]
-        loaded = False
-
+    def load_target_image(self, image: Image) -> bool:
         if image.loaded:
             image.logger.info(f"{image.name} Image loaded")
-            loaded = True
         else:
             image.logger.info(f"{image.name} Image not loaded")
-            loaded = self.pull_target_image(target)
+            self.pull_target_image(image)
 
-        return loaded
+        if image.loaded:
+            image.validate()
+            image.logger.info(f"{image.name} Image validated")
+
+        return image.loaded
 
     @staticmethod
     def display_image_build_options(image: Image) -> None:
@@ -468,35 +504,34 @@ class ImageTree:
         for line in json_lines:
             image.logger.info(line)
 
+    def should_load_target_image(self, target: str) -> bool:
+        # only load images if no upstream dependencies were (re)built
+        return not any(image for image in self.targets[target] if image.was_built)
+
     def build_target_image(self, target: str) -> None:
-        # use a breadth-first search to build images. this helps avoid
-        # unnecessarily loading or building images that aren't needed.
-        if not self.load_target_image(target):
-            image = self.images[target]
+        for image in self.targets[target]:
+            if self.should_load_target_image(target):
+                self.load_target_image(image)
 
-            if dependencies := self.config.get_target(target)["depends_on"]:
-                image.logger.info(f"{image.name} Depends on: {', '.join(dependencies)}")
-
-                for dependent in dependencies:
-                    self.build_target_image(dependent)
-
-            image.logger.info(f"{image.name} Trying build...")
-            self.display_image_build_options(image)
-            image.build()
+            if not image.loaded:
+                image.logger.info(f"{image.name} Trying build...")
+                self.display_image_build_options(image)
+                image.build()
 
     def build(self, targets: List[str]) -> None:
         logger.info("\nResolving dependency graph...")
         for target in targets:
-            self.resolve_dependency_graph(target)
+            self.targets[target] = self.resolve_target_images(target)
 
-        logger.info("\nBuilding target images...")
         for target in targets:
+            logger.info(f"\nBuilding [{target}] target...")
             self.build_target_image(target)
 
     def push(self) -> None:
+        logger.info("\nPushing images...")
         for image in self.images.values():
             if image.loaded:
-                if image.pulled:
+                if image.was_pulled:
                     image.logger.info(f"{image.name} Skipping push of pulled image")
                 else:
                     image.logger.info(f"{image.name} Trying push...")
@@ -553,7 +588,7 @@ def parse_options(args: List[str]) -> argparse.Namespace:
     for target in options._targets:
         target, _, tag = target.partition(":")
         options.targets.append(target)
-        if tag is not None:
+        if tag:
             options.tags[target] = tag
 
     return options
@@ -574,13 +609,13 @@ def main(args: List[str]) -> None:
     image_factory = ImageFactory(config, options.repo, options.tags)
     image_tree = ImageTree(config, image_factory)
     image_tree.build(options.targets)
-    logger.info(f"Build elapsed time: {elapsed_time(build_start_time)}")
+    logger.info(f"\nBuild elapsed time: {elapsed_time(build_start_time)}")
 
     if options.push:
         push_start_time = time.monotonic()
         image_tree.push()
-        logger.info(f"Push elapsed time: {elapsed_time(push_start_time)}")
-        logger.info(f"Total elapsed time: {elapsed_time(build_start_time)}")
+        logger.info(f"\nPush elapsed time: {elapsed_time(push_start_time)}")
+        logger.info(f"\nTotal elapsed time: {elapsed_time(build_start_time)}")
 
 
 def _main() -> None:
