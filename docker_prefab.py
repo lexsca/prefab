@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 logger.handlers = [logging.StreamHandler()]
 logger.setLevel(logging.INFO)
 
-DEFAULT_ALLOW_PULL_ERRORS: List[str] = [
+DEFAULT_ALLOWED_PULL_ERRORS: List[str] = [
     "ImageAccessError",
     "ImageNotFoundError",
     "ImageValidationError",
@@ -34,8 +34,10 @@ DEFAULT_CONFIG_FILE = "prefab.yml"
 DEFAULT_DIGEST_LABEL = "prefab.digest"
 DEFAULT_HASH_ALGORITHM = "sha256"
 DEFAULT_HASH_CHUNK_SIZE = 65535
+DEFAULT_PRUNE_AFTER_BUILD = True
 DEFAULT_SHORT_DIGEST_SIZE = 12
 DEFAULT_TARGET_LABEL = "prefab.target"
+DEFAULT_VALIDATE_IMAGE = True
 
 
 class DockerPrefabError(Exception):
@@ -87,20 +89,64 @@ class TargetLoggerAdapter(logging.LoggerAdapter):
         return f"[{self.extra.get('target', '<none>')}] {msg}", kwargs
 
 
-class Config(collections.UserDict):
+class ConfigBase(collections.UserDict):
     def __init__(self, config: Dict[str, str]) -> None:
         super().__init__(config)
         self.validate_config()
+        self.display_options()
 
     @classmethod
-    def from_yaml_filepath(cls, path: str) -> "Config":
-        logger.info(f"Loading config: {path}")
+    def from_yaml_filepath(cls, path: str):
+        logger.info(f"Loading config file: {path}")
         with open(path) as raw_config:
             return cls(yaml.safe_load(raw_config))
 
-    def get_option(self, name: str, default: Any) -> Any:
-        return self.data.get("options", {}).get(name, default)
+    def display_options(self) -> None:
+        logger.info("Config options:")
+        cls = type(self)
+        names = [name for name in dir(cls) if isinstance(getattr(cls, name), property)]
+        for name in sorted(names):
+            value = json.dumps(getattr(self, name))
+            logger.info(f"{name}: {value}")
 
+    def validate_config(self) -> None:
+        if "targets" not in self.data:
+            raise InvalidConfigError("targets section missing")
+
+        if not isinstance(self.data["targets"], dict):
+            raise InvalidConfigError("dict expected for targets section")
+
+        if not self.data["targets"]:
+            raise InvalidConfigError("no targets defined")
+
+        for target in self.data["targets"]:
+            self.validate_target(target)
+
+    def validate_target(self, target: str) -> None:
+        config = self.data["targets"][target]
+
+        if not isinstance(config, dict):
+            raise InvalidConfigError(f"{target}: dict expected for target config")
+
+        if "dockerfile" not in config or not isinstance(config["dockerfile"], str):
+            raise InvalidConfigError(f"{target}: dockerfile required in target config")
+
+        self.validate_target_config(target, config)
+
+    def validate_target_config(self, target: str, config: Dict[str, Any]) -> None:
+        if not isinstance(config.get("depends_on", []), list):
+            raise InvalidConfigError(f"{target}: list expected for target depends_on")
+
+        if not isinstance(config.get("watch_files", []), list):
+            raise InvalidConfigError(f"{target}: list expected for target watch_files")
+
+        if not isinstance(config.get("build_options", {}), dict):
+            raise InvalidConfigError(
+                f"{target}: dict expected for target build_options"
+            )
+
+
+class Config(ConfigBase):
     def get_target(self, name: str) -> Dict[str, Any]:
         target = self.data.get("targets", {}).get(name)
 
@@ -116,71 +162,44 @@ class Config(collections.UserDict):
 
         return target
 
+    def get_option(self, name: str, default: Any) -> Any:
+        return self.data.get("options", {}).get(name, default)
+
     @property
-    def allow_pull_errors(self) -> Tuple[Any, ...]:
-        allow_names = self.get_option("allow_pull_errors", DEFAULT_ALLOW_PULL_ERRORS)
-        symbols = globals()
-        return tuple(symbols[name] for name in allow_names if name in symbols)
+    def allowed_pull_errors(self) -> List[str]:
+        return self.get_option("allowed_pull_errors", DEFAULT_ALLOWED_PULL_ERRORS)
 
     @property
     def buildarg_prefix(self) -> str:
-        return str(self.get_option("buildarg_prefix", DEFAULT_BUILDARG_PREFIX))
+        return self.get_option("buildarg_prefix", DEFAULT_BUILDARG_PREFIX)
 
     @property
     def digest_label(self) -> str:
-        return str(self.get_option("digest_label", DEFAULT_DIGEST_LABEL))
+        return self.get_option("digest_label", DEFAULT_DIGEST_LABEL)
 
     @property
     def hash_algorithm(self) -> str:
-        return str(self.get_option("hash_algorithm", DEFAULT_HASH_ALGORITHM))
+        return self.get_option("hash_algorithm", DEFAULT_HASH_ALGORITHM)
 
     @property
     def hash_chunk_size(self) -> int:
-        return int(self.get_option("hash_chunk_size", DEFAULT_HASH_CHUNK_SIZE))
+        return self.get_option("hash_chunk_size", DEFAULT_HASH_CHUNK_SIZE)
+
+    @property
+    def prune_after_build(self) -> bool:
+        return self.get_option("prune_after_build", DEFAULT_PRUNE_AFTER_BUILD)
 
     @property
     def short_digest_size(self) -> int:
-        return int(self.get_option("short_digest_size", DEFAULT_SHORT_DIGEST_SIZE))
+        return self.get_option("short_digest_size", DEFAULT_SHORT_DIGEST_SIZE)
 
     @property
     def target_label(self) -> str:
-        return str(self.get_option("target_label", DEFAULT_TARGET_LABEL))
+        return self.get_option("target_label", DEFAULT_TARGET_LABEL)
 
-    def validate_target_config(self, target: str, config: Dict[str, Any]) -> None:
-        if not isinstance(config.get("depends_on", []), list):
-            raise InvalidConfigError(f"{target}: list expected for target depends_on")
-
-        if not isinstance(config.get("watch_files", []), list):
-            raise InvalidConfigError(f"{target}: list expected for target watch_files")
-
-        if not isinstance(config.get("build_options", {}), dict):
-            raise InvalidConfigError(
-                f"{target}: dict expected for target build_options"
-            )
-
-    def validate_target(self, target: str) -> None:
-        config = self.data["targets"][target]
-
-        if not isinstance(config, dict):
-            raise InvalidConfigError(f"{target}: dict expected for target config")
-
-        if "dockerfile" not in config or not isinstance(config["dockerfile"], str):
-            raise InvalidConfigError(f"{target}: dockerfile required in target config")
-
-        self.validate_target_config(target, config)
-
-    def validate_config(self) -> None:
-        if "targets" not in self.data:
-            raise InvalidConfigError("targets section missing")
-
-        if not isinstance(self.data["targets"], dict):
-            raise InvalidConfigError("dict expected for targets section")
-
-        if not self.data["targets"]:
-            raise InvalidConfigError("no targets defined")
-
-        for target in self.data["targets"]:
-            self.validate_target(target)
+    @property
+    def validate_image(self) -> bool:
+        return self.get_option("validate_image", DEFAULT_VALIDATE_IMAGE)
 
 
 class Image:
@@ -263,13 +282,14 @@ class Image:
         docker_image = self._get_docker_image()
 
         if docker_image is None:
-            raise ImageNotFoundError(f"{self.name} unable to find for validation")
+            raise ImageNotFoundError(f"{self.name} not found for validation")
 
         for name, expected in self.build_options["labels"].items():
             result = docker_image.labels.get(name)
             if result != expected:
                 raise ImageValidationError(
-                    f"label {name} expected {expected}, got {result}"
+                    f'{self.name} label "{name}" '
+                    f'expected value "{expected}", got "{result}"'
                 )
 
     def _build(self) -> Generator[Dict[str, Any], None, None]:
@@ -278,6 +298,11 @@ class Image:
         except docker.errors.APIError as error:
             raise ImageBuildError(str(error))
         return log_stream
+
+    def _build_success(self) -> None:
+        self.logger.info(f"{self.name} Build succeeded")
+        self.was_built = True
+        self._loaded = True
 
     def build(self) -> None:
         log_stream = self._build()
@@ -288,11 +313,9 @@ class Image:
             if message := log_entry.get("stream", "").strip():
                 self.logger.info(message)
 
-        self.was_built = True
-        self._loaded = True
-        self._prune_dangling_images()
+        self._build_success()
 
-    def _prune_dangling_images(self):
+    def prune(self) -> None:
         try:
             self.docker_client.api.prune_images(filters={"dangling": True})
         except Exception as error:
@@ -306,6 +329,24 @@ class Image:
             self._process_transfer_log_stream(log_stream)
         except docker.errors.APIError as error:
             raise ImagePushError(str(error))
+
+
+class FakeImage(Image):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self._loaded = False
+
+    def pull(self) -> None:
+        raise ImageNotFoundError(f"{self.name} Not found")
+
+    def validate(self) -> None:
+        pass
+
+    def build(self) -> None:
+        self._build_success()
+
+    def push(self) -> None:
+        self.logger.info(f"{self.name} Pushed")
 
 
 class ImageFactory:
@@ -448,7 +489,8 @@ class ImageTree:
     ) -> List[Image]:
         # use a depth-first search to unroll dependencies and detect loops.
         # targets have a directed dependency stream. if an upstream target
-        # dependency changes, downstream dependencies also change.
+        # dependency changes, downstream dependencies also change, forcing
+        # a new image build.
         for dependent in self.config.get_target(target).get("depends_on", []):
             vector = (target, dependent)
             if vector in vectors:
@@ -468,18 +510,24 @@ class ImageTree:
     def resolve_target_images(self, target: str) -> List[Image]:
         return self._resolve_target_images(target=target, images=[], vectors=[])
 
+    @property
+    def allowed_pull_errors(self) -> Tuple[Any, ...]:
+        symbols = globals()
+        allowed_error_names = self.config.allowed_pull_errors
+        return tuple(symbols[name] for name in allowed_error_names if name in symbols)
+
     def pull_target_image(self, image: Image) -> None:
         try:
             image.logger.info(f"{image.name} Trying pull...")
             image.pull()
         except Exception as error:
-            if not isinstance(error, self.config.allow_pull_errors):
+            if not isinstance(error, self.allowed_pull_errors):
                 raise
             else:
                 error_name = type(error).__name__
                 image.logger.info(f"{image.name} {error_name}: {error}")
                 image.logger.info(
-                    f"{image.name} {error_name} in allow_pull_errors, continuing..."
+                    f"{image.name} {error_name} in allowed_pull_errors, continuing..."
                 )
 
     def load_target_image(self, image: Image) -> bool:
@@ -489,7 +537,7 @@ class ImageTree:
             image.logger.info(f"{image.name} Image not loaded")
             self.pull_target_image(image)
 
-        if image.loaded:
+        if image.loaded and self.config.validate_image:
             image.validate()
             image.logger.info(f"{image.name} Image validated")
 
@@ -508,6 +556,10 @@ class ImageTree:
         # only load images if no upstream dependencies were (re)built
         return not any(image for image in self.targets[target] if image.was_built)
 
+    def _build_cleanup(self, image: Image) -> None:
+        if self.config.prune_after_build:
+            image.prune()
+
     def build_target_image(self, target: str) -> None:
         for image in self.targets[target]:
             if self.should_load_target_image(target):
@@ -517,6 +569,7 @@ class ImageTree:
                 image.logger.info(f"{image.name} Trying build...")
                 self.display_image_build_options(image)
                 image.build()
+                self._build_cleanup(image)
 
     def build(self, targets: List[str]) -> None:
         logger.info("\nResolving dependency graph...")
@@ -606,7 +659,8 @@ def main(args: List[str]) -> None:
     logger.info(f"Called with args: {' '.join(args)}")
     config = Config.from_yaml_filepath(options.config_file)
 
-    image_factory = ImageFactory(config, options.repo, options.tags)
+    image_constructor = FakeImage if options.noop else Image
+    image_factory = ImageFactory(config, options.repo, options.tags, image_constructor)
     image_tree = ImageTree(config, image_factory)
     image_tree.build(options.targets)
     logger.info(f"\nBuild elapsed time: {elapsed_time(build_start_time)}")
