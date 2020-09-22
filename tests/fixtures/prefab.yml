@@ -19,16 +19,16 @@ targets:
       - b
       - c
     watch_files:
-      - prefab.yml
+      - tests/fixtures/prefab.yml
 
   b:
     dockerfile: Dockerfile.b
     depends_on:
       - c
     watch_files:
-      - prefab.yml
+      - tests/fixtures/prefab.yml
 
   c:
     dockerfile: Dockerfile.c
     watch_files:
-      - prefab.yml
+      - tests/fixtures/prefab.yml
