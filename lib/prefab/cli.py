@@ -60,12 +60,18 @@ def parse_options(args: List[str]) -> argparse.Namespace:
     options = parser.parse_args(args)
     options.tags = dict()
     options.targets = []
+    tag_set = set()
 
     for target in options._targets:
         target, _, tag = target.partition(":")
         options.targets.append(target)
-        if tag:
+        if tag and tag in tag_set:
+            parser.exit(
+                status=2, message=f"{parser.format_help()}\nDuplicate tag: {tag}\n"
+            )
+        elif tag:
             options.tags[target] = tag
+            tag_set.add(tag)
 
     return options
 

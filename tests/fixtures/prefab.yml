@@ -1,0 +1,34 @@
+options:
+  allowed_pull_errors:
+    - ImageAccessError
+    - ImageNotFoundError
+    - ImageValidationError
+  buildarg_prefix: prefab_
+  digest_label: prefab.digest
+  hash_algorithm: sha256
+  hash_chunk_size: 65535
+  prune_after_build: true
+  short_digest_size: 12
+  target_label: prefab.target
+  validate_image: true
+
+targets:
+  a:
+    dockerfile: Dockerfile.a
+    depends_on:
+      - b
+      - c
+    watch_files:
+      - prefab.yml
+
+  b:
+    dockerfile: Dockerfile.b
+    depends_on:
+      - c
+    watch_files:
+      - prefab.yml
+
+  c:
+    dockerfile: Dockerfile.c
+    watch_files:
+      - prefab.yml

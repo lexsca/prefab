@@ -7,6 +7,7 @@ requirements-dev.txt: requirements-dev.in
 	pip-compile -v requirements-dev.in
 
 install-requirements: requirements.txt requirements-dev.txt
+	pip install -U pip
 	pip install -U -r requirements.txt
 	pip install -U -r requirements-dev.txt
 
@@ -21,7 +22,8 @@ format:
 lint:
 	black --check --diff .
 	flake8 .
-	bandit -r .
+	bandit -r bin lib
 	mypy --ignore-missing-imports --cache-dir=/dev/null .
 
 test: format lint
+	pytest --random-order --cov=lib --cov-report=term-missing tests
