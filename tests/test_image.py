@@ -8,16 +8,19 @@ from prefab.image import Image
 
 
 @pytest.mark.skipif(not os.path.exists("/var/run/docker.sock"), reason="docker missing")
-def test_pull_alpine_image():
-    image = Image(repo="alpine", tag="latest", build_options={"labels": {}})
+def test_pull_prefab_none():
+    build_options = {"labels": {"prefab.target": "none"}}
+    image = Image(repo="quay.io/lexsca/prefab", tag="none", build_options=build_options)
     image.pull()
+    image.validate()
+    image.remove()
 
     assert image.loaded
 
 
 @pytest.mark.skipif(not os.path.exists("/var/run/docker.sock"), reason="docker missing")
-def test_build_from_alpine():
-    fileobj = io.BytesIO(b"FROM alpine")
+def test_build_from_scratch():
+    fileobj = io.BytesIO(b"FROM scratch")
     build_options = {
         **C.DEFAULT_BUILD_OPTIONS,
         **{
@@ -30,5 +33,6 @@ def test_build_from_alpine():
     image = Image(repo="sunlit-sing", tag="aspect-workbag", build_options=build_options)
     image.build()
     image.validate()
+    image.remove()
 
     assert image.loaded

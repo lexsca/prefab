@@ -57,6 +57,9 @@ class Image:
                 docker_image = image
                 break
 
+        if docker_image is None:
+            raise E.ImageNotFoundError(f"{self.name} not found")
+
         return docker_image
 
     @property
@@ -85,9 +88,6 @@ class Image:
 
     def validate(self) -> None:
         docker_image = self._get_docker_image()
-
-        if docker_image is None:
-            raise E.ImageNotFoundError(f"{self.name} not found for validation")
 
         for name, expected in self.build_options["labels"].items():
             result = docker_image.labels.get(name)
@@ -134,6 +134,10 @@ class Image:
             self._process_transfer_log_stream(log_stream)
         except docker.errors.APIError as error:
             raise E.ImagePushError(str(error))
+
+    def remove(self, force: bool = False, noprune: bool = False) -> None:
+        docker_image = self._get_docker_image()
+        self.docker_client.images.remove(docker_image.id, force, noprune)
 
 
 class FakeImage(Image):
