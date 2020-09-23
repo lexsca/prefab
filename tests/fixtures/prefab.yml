@@ -20,6 +20,10 @@ targets:
       - c
     watch_files:
       - tests/fixtures/prefab.yml
+    build_options:
+      labels:
+        fixture: "true"
+      squash: false
 
   b:
     dockerfile: Dockerfile.b

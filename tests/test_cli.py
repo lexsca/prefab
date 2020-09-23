@@ -10,9 +10,9 @@ def test_dry_run(caplog, prefab_yaml_path):
         "quay.io/lexsca/prefab",
         "--target",
         "a:a",
+        "--push",
     ]
     cli(args)
-    expected = "[a] quay.io/lexsca/prefab:a Build succeeded"
-    result = caplog.records[-2].message
 
-    assert result == expected
+    assert caplog.records[-11].message == "[a] quay.io/lexsca/prefab:a Build succeeded"
+    assert caplog.records[-3].message == "[a] quay.io/lexsca/prefab:a Pushed"
