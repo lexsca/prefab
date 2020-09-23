@@ -5,3 +5,6 @@ __pycache__
 .*.sw?
 .python-version
 .DS_Store
+build/
+dist/
+*.egg-info
