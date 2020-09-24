@@ -110,18 +110,18 @@ class ImageFactory:
         return buildargs
 
     def get_target_build_options(self, target: str) -> Dict[str, Any]:
-        build_config = self.config.get_target(target)
+        target_config = self.config.get_target(target)
         build_options: Dict[str, Any] = {
             **C.DEFAULT_BUILD_OPTIONS,
             **{
-                "dockerfile": build_config["dockerfile"],
+                "dockerfile": target_config["dockerfile"],
                 "labels": self.get_target_labels(target),
                 "buildargs": self.get_target_buildargs(target),
                 "tag": f"{self.repo}:{self.get_target_tag(target)}",
             },
         }
 
-        for key, value in build_config.get("build_options", {}).items():
+        for key, value in target_config.get("build_options", {}).items():
             if key in {"labels", "buildargs"}:
                 build_options[key].update(value)
             else:
