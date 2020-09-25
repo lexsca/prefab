@@ -7,7 +7,8 @@ clean:
 
 build: clean
 	python setup.py sdist bdist_wheel
-	docker build -t quay.io/lexsca/prefab .
+	docker build --squash -t quay.io/lexsca/prefab .
+	docker image prune -f
 
 publish:
 	twine upload dist/*
