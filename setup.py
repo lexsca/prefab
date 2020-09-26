@@ -2,7 +2,6 @@ from setuptools import setup
 
 setup(
     name="docker-prefab",
-    version="0.1.0",
     description="Efficiently build docker images",
     # long_description=open('README.rst').read(),
     author="Lex Scarisbrick",
