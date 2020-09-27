@@ -6,5 +6,6 @@ pip-tools
 pytest
 pytest-cov
 pytest-random-order
+sphinx
 twine
 wheel

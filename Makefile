@@ -17,6 +17,7 @@ clean:
 	rm -fr lib/*.egg-info dist build .pytest_cache $(VERSION_PY)
 	find . -type d -name __pycache__ -exec /bin/rm -fr {} +
 	find . -depth -type f -name '*.pyc' -exec /bin/rm -fr {} +
+	$(MAKE) -C doc clean
 
 version:
 	echo '__version__ = "$(VERSION)"' > $(VERSION_PY)
