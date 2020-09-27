@@ -27,6 +27,9 @@ author = 'Lex Scarisbrick'
 version = __version__
 release = __version__
 
+# https://github.com/readthedocs/readthedocs.org/issues/2569
+master_doc = 'index'
+
 
 # -- General configuration ---------------------------------------------------
 
