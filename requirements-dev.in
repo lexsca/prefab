@@ -7,5 +7,6 @@ pytest
 pytest-cov
 pytest-random-order
 sphinx
+sphinx-rtd-theme
 twine
 wheel

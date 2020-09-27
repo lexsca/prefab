@@ -9,3 +9,4 @@ build/
 dist/
 *.egg-info
 lib/prefab/version.py
+doc/_build
