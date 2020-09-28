@@ -35,10 +35,9 @@ class ImageGraph:
                     f"Target [{target}] has circular dependencies"
                 )
             else:
-                checkpoint = len(vectors)
                 vectors.append(vector)
                 self._resolve_target_images(dependent, images, vectors)
-                del vectors[checkpoint:]
+                vectors.pop()
 
         image = self.configure_target_image(target)
         if image not in images:

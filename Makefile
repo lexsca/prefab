@@ -22,7 +22,7 @@ clean:
 version:
 	echo '__version__ = "$(VERSION)"' > $(VERSION_PY)
 
-build: version
+build: test version
 	python setup.py sdist bdist_wheel
 	docker build --squash -t $(IMAGE_REPO):$(VERSION) .
 	docker image prune -f
@@ -60,11 +60,11 @@ refesh-requirements:
 format:
 	black .
 
-lint: version
+lint:
 	black --check --diff .
-	flake8 .
+	flake8 bin lib tests
 	bandit -r bin lib
 	mypy --ignore-missing-imports --cache-dir=/dev/null .
 
-test: lint
+test: clean lint
 	pytest --random-order --cov=lib --cov-report=term-missing tests
