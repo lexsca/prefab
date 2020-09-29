@@ -3,7 +3,7 @@
 
 IMAGE_REPO ?= quay.io/lexsca/prefab
 VERSION ?= $(shell TZ=UTC git log -1 --format='%cd' \
-	--date='format-local:%y.%m.%d%H%M%S' HEAD)
+	--date='format-local:%y.%m.%d%H%M' HEAD)
 VERSION_PY ?= lib/prefab/version.py
 RELEASE_TAG ?= $(VERSION)
 
