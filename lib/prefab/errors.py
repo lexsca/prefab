@@ -1,42 +1,42 @@
-class DockerPrefabError(Exception):
+class ContainerPrefabError(Exception):
     pass
 
 
-class HashAlgorithmNotFound(DockerPrefabError):
+class HashAlgorithmNotFound(ContainerPrefabError):
     pass
 
 
-class ImageAccessError(DockerPrefabError):
+class ImageAccessError(ContainerPrefabError):
     pass
 
 
-class ImageBuildError(DockerPrefabError):
+class ImageBuildError(ContainerPrefabError):
     pass
 
 
-class ImageNotFoundError(DockerPrefabError):
+class ImageNotFoundError(ContainerPrefabError):
     pass
 
 
-class ImagePushError(DockerPrefabError):
+class ImagePushError(ContainerPrefabError):
     pass
 
 
-class ImageValidationError(DockerPrefabError):
+class ImageValidationError(ContainerPrefabError):
     pass
 
 
-class InvalidConfigError(DockerPrefabError):
+class InvalidConfigError(ContainerPrefabError):
     pass
 
 
-class TargetTagError(DockerPrefabError):
+class TargetTagError(ContainerPrefabError):
     pass
 
 
-class TargetCyclicError(DockerPrefabError):
+class TargetCyclicError(ContainerPrefabError):
     pass
 
 
-class TargetNotFoundError(DockerPrefabError):
+class TargetNotFoundError(ContainerPrefabError):
     pass

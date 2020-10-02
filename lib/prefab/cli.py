@@ -6,7 +6,6 @@ import traceback
 from typing import List
 
 from . import constants as C
-from . import errors as E
 from .config import Config
 from .logger import logger
 from .image import Image, FakeImage
@@ -15,7 +14,7 @@ from .image_graph import ImageGraph
 
 
 def parse_options(args: List[str]) -> argparse.Namespace:
-    description = "Efficiently build container images"
+    description = "efficiently build container images"
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument(
         "--config",
@@ -85,7 +84,7 @@ def cli(args: List[str]) -> None:
     build_start_time = time.monotonic()
 
     options = parse_options(args)
-    logger.info(f"Called with args: {' '.join(args)}")
+    logger.info(f"Called with args: {args}")
     config = Config.from_yaml_filepath(options.config_file)
 
     image_constructor = FakeImage if options.noop else Image
@@ -105,9 +104,6 @@ def main() -> None:
     try:
         cli(sys.argv[1:])
         status = 0
-    except E.DockerPrefabError as error:
-        logger.error(f"{type(error).__name__}: {error}")
-        status = 1
     except Exception:
         logger.error(traceback.format_exc())
         status = 1

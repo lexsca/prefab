@@ -1,6 +1,7 @@
 __pycache__
 .mypy_cache
 *.pyc
+*.whl
 .coverage
 .*.sw?
 .python-version

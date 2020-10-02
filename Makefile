@@ -17,14 +17,16 @@ clean:
 	rm -fr lib/*.egg-info dist build .pytest_cache $(VERSION_PY)
 	find . -type d -name __pycache__ -exec /bin/rm -fr {} +
 	find . -depth -type f -name '*.pyc' -exec /bin/rm -fr {} +
-	$(MAKE) -C doc clean
+	find . -depth -type f -name '*.whl' -exec /bin/rm -fr {} +
+	$(MAKE) -C docs clean
 
 version:
 	echo '__version__ = "$(VERSION)"' > $(VERSION_PY)
 
-build: test version
+build:
 	python setup.py sdist bdist_wheel
-	docker build --squash -t $(IMAGE_REPO):$(VERSION) .
+	cp dist/*.whl image
+	docker build --squash -t $(IMAGE_REPO):$(VERSION) image
 	docker image prune -f
 
 push-image:
@@ -39,7 +41,7 @@ push-release-tag:
 	git tag $(RELEASE_TAG) HEAD
 	git push origin $(RELEASE_TAG)
 
-publish: build upload-pypi push-image push-release-tag
+publish: test version build upload-pypi push-image push-release-tag
 
 requirements.txt: requirements.in
 	pip-compile -v requirements.in

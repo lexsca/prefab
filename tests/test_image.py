@@ -36,3 +36,10 @@ def test_build_from_scratch():
     image.remove()
 
     assert image.loaded
+
+
+@pytest.mark.skipif(not os.path.exists("/var/run/docker.sock"), reason="docker missing")
+def test_loaded_does_not_raise_ImageNotFoundError():
+    image = Image(repo="scratch", tag=None, build_options={})
+
+    assert not image.loaded

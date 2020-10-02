@@ -1,0 +1,30 @@
+#!/bin/sh
+
+printf "\nPodman starting ... "
+podman system service --time=0 unix:///var/run/docker.sock &
+
+success=0
+tries=0
+
+while [ $tries -lt 5 ]
+do
+    tries=$(( $tries + 1 ))
+    curl --silent --unix-socket /var/run/docker.sock \
+        http://localhost/version > /version.json
+    if [ $? == 0 ]; then
+        success=1
+        break
+    fi
+    sleep 2
+done
+
+if [ $success == 0 ]; then
+    printf "\nPodman failed to start\n"
+    exit 1
+fi
+
+printf "\n"
+jq . < /version.json
+printf "\n"
+
+exec container-prefab $@

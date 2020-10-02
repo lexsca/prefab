@@ -69,7 +69,11 @@ class Image:
     @property
     def loaded(self) -> bool:
         if self._loaded is None:
-            self._loaded = bool(self._get_docker_image())
+            try:
+                self._get_docker_image()
+                self._loaded = True
+            except E.ImageNotFoundError:
+                self._loaded = False
 
         return self._loaded
 

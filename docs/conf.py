@@ -22,7 +22,7 @@ from prefab import __version__
 
 # -- Project information -----------------------------------------------------
 
-project = "docker-prefab"
+project = "container-prefab"
 copyright = "2020, Lex Scarisbrick"
 author = "Lex Scarisbrick"
 
