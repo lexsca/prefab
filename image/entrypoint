@@ -24,7 +24,7 @@ if [ $success == 0 ]; then
 fi
 
 printf "\n"
-jq . < /version.json
+jq -M . < /version.json
 printf "\n"
 
 exec container-prefab $@
