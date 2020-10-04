@@ -15,7 +15,7 @@ def test_pull_prefab_none():
     image.validate()
     image.remove()
 
-    assert image.loaded
+    assert image.is_loaded
 
 
 @pytest.mark.skipif(not os.path.exists("/var/run/docker.sock"), reason="docker missing")
@@ -35,11 +35,11 @@ def test_build_from_scratch():
     image.validate()
     image.remove()
 
-    assert image.loaded
+    assert image.is_loaded
 
 
 @pytest.mark.skipif(not os.path.exists("/var/run/docker.sock"), reason="docker missing")
 def test_loaded_does_not_raise_ImageNotFoundError():
     image = Image(repo="scratch", tag=None, build_options={})
 
-    assert not image.loaded
+    assert not image.is_loaded

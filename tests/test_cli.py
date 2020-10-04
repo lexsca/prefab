@@ -6,6 +6,7 @@ from prefab.cli import cli
 def test_dry_run(caplog, prefab_yaml_path):
     args = [
         "--dry-run",
+        "--monochrome",
         "--config",
         prefab_yaml_path,
         "--repo",

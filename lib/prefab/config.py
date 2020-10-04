@@ -4,6 +4,7 @@ from typing import Any, Dict, List
 
 from . import errors as E
 from . import constants as C
+from .color import color
 from .logger import logger
 
 import yaml
@@ -13,21 +14,18 @@ class ConfigBase(collections.UserDict):
     def __init__(self, config: Dict[str, str]) -> None:
         super().__init__(config)
         self.validate_config()
-        self.display_options()
 
     @classmethod
     def from_yaml_filepath(cls, path: str):
-        logger.info(f"Loading config file: {path}")
         with open(path) as raw_config:
             return cls(yaml.safe_load(raw_config))
 
     def display_options(self) -> None:
-        logger.info("Config options:")
         cls = type(self)
         names = [name for name in dir(cls) if isinstance(getattr(cls, name), property)]
         for name in sorted(names):
             value = json.dumps(getattr(self, name))
-            logger.info(f"{name}: {value}")
+            logger.info(f"{name}: {color.green(value)}")
 
     def validate_config(self) -> None:
         if "targets" not in self.data:

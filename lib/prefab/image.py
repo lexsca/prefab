@@ -67,7 +67,7 @@ class Image:
         return f"{self.repo}:{self.tag}"
 
     @property
-    def loaded(self) -> bool:
+    def is_loaded(self) -> bool:
         if self._loaded is None:
             try:
                 self._get_docker_image()

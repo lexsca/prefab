@@ -14,23 +14,24 @@ help:
 	cut -d: -f1 | egrep -v '^$(MAKEFILE)$$|^$@$$' | sort -n
 
 clean:
-	rm -fr lib/*.egg-info dist build .pytest_cache $(VERSION_PY)
+	rm -fr lib/*.egg-info dist build .pytest_cache $(VERSION_PY) \
+		image/*.whl image/requirements.txt
 	find . -type d -name __pycache__ -exec /bin/rm -fr {} +
 	find . -depth -type f -name '*.pyc' -exec /bin/rm -fr {} +
-	find . -depth -type f -name '*.whl' -exec /bin/rm -fr {} +
 	$(MAKE) -C docs clean
 
 version:
 	echo '__version__ = "$(VERSION)"' > $(VERSION_PY)
 
-build:
+build: clean version
 	python setup.py sdist bdist_wheel
 	cp dist/*.whl image
+	cp requirements.txt image
 	docker build --squash -t $(IMAGE_REPO):$(VERSION) image
+	docker tag $(IMAGE_REPO):$(VERSION) $(IMAGE_REPO):latest
 	docker image prune -f
 
 push-image:
-	docker tag $(IMAGE_REPO):$(VERSION) $(IMAGE_REPO):latest
 	docker push $(IMAGE_REPO):$(VERSION)
 	docker push $(IMAGE_REPO):latest
 

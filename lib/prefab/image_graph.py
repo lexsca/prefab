@@ -2,6 +2,7 @@ import json
 from typing import Any, Callable, Dict, List, Tuple
 
 from . import errors as E
+from .color import color
 from .config import Config
 from .image import Image
 from .logger import logger
@@ -17,7 +18,7 @@ class ImageGraph:
     def configure_target_image(self, target: str) -> Image:
         if target not in self.images:
             image = self.images[target] = self.image_factory(target)
-            image.logger.info(f"target_image {image.name}")
+            image.logger.info(f"target_image {color.yellow(image.name)}")
 
         return self.images[target]
 
@@ -55,39 +56,41 @@ class ImageGraph:
 
     def pull_target_image(self, image: Image) -> None:
         try:
-            image.logger.info(f"{image.name} Trying pull...")
+            image.logger.info(f"{color.yellow(image.name)} Trying pull...")
             image.pull()
         except Exception as error:
             if not isinstance(error, self.allowed_pull_errors):
                 raise
             else:
                 error_name = type(error).__name__
-                image.logger.info(f"{image.name} {error_name}: {error}")
+                image.logger.info(f"{color.yellow(image.name)} {error_name}: {error}")
                 image.logger.info(
-                    f"{image.name} {error_name} in allowed_pull_errors, continuing..."
+                    f"{color.yellow(image.name)} {error_name} in allowed_pull_errors, continuing..."
                 )
 
     def load_target_image(self, image: Image) -> bool:
-        if image.loaded:
-            image.logger.info(f"{image.name} Image loaded")
+        if image.is_loaded:
+            image.logger.info(f"{color.yellow(image.name)} Image loaded")
         else:
-            image.logger.info(f"{image.name} Image not loaded")
+            image.logger.info(f"{color.yellow(image.name)} Image not loaded")
             self.pull_target_image(image)
 
-        if image.loaded and self.config.validate_image:
+        if image.is_loaded and self.config.validate_image:
             image.validate()
-            image.logger.info(f"{image.name} Image validated")
+            image.logger.info(f"{color.yellow(image.name)} Image validated")
 
-        return image.loaded
+        return image.is_loaded
 
     @staticmethod
     def display_image_build_options(image: Image) -> None:
         json_text = json.dumps(image.build_options, sort_keys=True, indent=4)
         json_lines = json_text.splitlines()
-        image.logger.info(f"{image.name} build_options {json_lines.pop(0)}")
+        image.logger.info(
+            f"{color.yellow(image.name)} build_options {color.green(json_lines.pop(0))}"
+        )
 
         for line in json_lines:
-            image.logger.info(line)
+            image.logger.info(color.green(line))
 
     def should_load_target_image(self, target: str) -> bool:
         # only load images if no upstream dependencies were (re)built
@@ -97,32 +100,55 @@ class ImageGraph:
         if self.config.prune_after_build:
             image.prune()
 
-    def build_target_image(self, target: str) -> None:
+    def build_target_images(self, target: str) -> None:
         for image in self.targets[target]:
             if self.should_load_target_image(target):
                 self.load_target_image(image)
 
-            if not image.loaded:
-                image.logger.info(f"{image.name} Trying build...")
+            if not image.is_loaded:
+                image.logger.info(f"{color.yellow(image.name)} Trying build...")
                 self.display_image_build_options(image)
                 image.build()
                 self._build_cleanup(image)
 
+    def display_build_target(self, target: str) -> None:
+        images = dict(map(reversed, self.images.items()))
+        targets = [color.cyan(f"[{images[image]}]") for image in self.targets[target]]
+
+        if len(targets) > 1:
+            build_order = color.magenta("using build order ")
+            build_order += color.magenta(", ").join(targets)
+        else:
+            build_order = ""
+
+        logger.info(
+            "\n{0} {1} {2} {3}".format(
+                color.magenta("Building"),
+                color.cyan(f"[{target}]"),
+                color.magenta("target"),
+                build_order,
+            )
+        )
+
     def build(self, targets: List[str]) -> None:
-        logger.info("\nResolving dependency graph...")
+        logger.info(color.magenta("\nResolving dependency graph"))
+
         for target in targets:
             self.targets[target] = self.resolve_target_images(target)
 
         for target in targets:
-            logger.info(f"\nBuilding [{target}] target...")
-            self.build_target_image(target)
+            self.display_build_target(target)
+            self.build_target_images(target)
 
     def push(self) -> None:
-        logger.info("\nPushing images...")
+        logger.info(color.magenta("\nPushing images"))
+
         for image in self.images.values():
-            if image.loaded:
+            if image.is_loaded:
                 if image.was_pulled:
-                    image.logger.info(f"{image.name} Skipping push of pulled image")
+                    image.logger.info(
+                        f"{color.yellow(image.name)} Skipping push of pulled image"
+                    )
                 else:
-                    image.logger.info(f"{image.name} Trying push...")
+                    image.logger.info(f"{color.yellow(image.name)} Trying push...")
                     image.push()
