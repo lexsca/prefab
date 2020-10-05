@@ -1,0 +1,12 @@
+FROM alpine:edge
+
+COPY repositories /etc/apk/repositories
+
+ENV REGISTRY_AUTH_FILE=/authfile
+
+RUN apk -U add python3 py3-pip tzdata podman buildah curl && \
+    pip3 install -U pip wheel && \
+    rm -fr /root/.cache /var/cache && \
+    mkdir -p /root/.docker && \
+    touch $REGISTRY_AUTH_FILE && \
+    ln -fs $REGISTRY_AUTH_FILE /root/.docker/config.json

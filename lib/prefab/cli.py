@@ -105,7 +105,7 @@ def parse_args(args: List[str]) -> Tuple[argparse.Namespace, Config]:
 def elapsed_time(monotonic_start: float) -> str:
     elapsed_time = datetime.timedelta(seconds=time.monotonic() - monotonic_start)
 
-    if elapsed_time.seconds == 0:
+    if elapsed_time.seconds < 10:
         award = "🛸"
     elif elapsed_time.seconds < 60:
         award = "🚀"
@@ -129,16 +129,18 @@ def cli(args: List[str]) -> None:
     image_factory = ImageFactory(config, options.repo, options.tags, image_constructor)
     image_graph = ImageGraph(config, image_factory)
     image_graph.build(options.targets)
-    logger.info(color.green(f"\nBuild elapsed time: {elapsed_time(build_start_time)}"))
+    logger.info(
+        f"\n{color.green('Build elapsed time:')} {elapsed_time(build_start_time)}"
+    )
 
     if options.push:
         push_start_time = time.monotonic()
         image_graph.push()
         logger.info(
-            color.green(f"\nPush elapsed time: {elapsed_time(push_start_time)}")
+            f"\n{color.green('Push elapsed time: ')} {elapsed_time(push_start_time)}"
         )
         logger.info(
-            color.green(f"\nTotal elapsed time: {elapsed_time(build_start_time)}")
+            f"{color.green('Total elapsed time:')} {elapsed_time(build_start_time)}\n"
         )
 
 

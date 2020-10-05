@@ -96,6 +96,12 @@ class Config(ConfigBase):
         return self.get_option("buildarg_prefix", C.DEFAULT_BUILDARG_PREFIX)
 
     @property
+    def build_on_validate_error(self) -> str:
+        return self.get_option(
+            "build_on_validate_error", C.DEFAULT_BUILD_ON_VALIDATE_ERROR
+        )
+
+    @property
     def digest_label(self) -> str:
         return self.get_option("digest_label", C.DEFAULT_DIGEST_LABEL)
 

@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import Any, Dict, Generator, Optional, Union
 
@@ -37,11 +38,21 @@ class Image:
 
         self.logger.info(message)
 
+    def _log_stream_decoder(
+        self, chunker: Generator[bytes, None, None]
+    ) -> Generator[Dict[str, Any], None, None]:
+        for chunk in chunker:
+            for line in chunk.splitlines():
+                try:
+                    yield json.loads(line)
+                except json.decoder.JSONDecodeError:
+                    self.logger.warning(f"Skipping malformed log entry: {chunk}")
+
     def _process_transfer_log_stream(
         self, log_stream: Generator[Dict[str, Any], None, None]
     ) -> None:
-        for log_entry in log_stream:
-            if "error" in log_entry:
+        for log_entry in self._log_stream_decoder(log_stream):
+            if log_entry.get("error"):
                 raise E.ImageAccessError(log_entry["error"])
 
             if "status" not in log_entry or log_entry.get("progressDetail"):
@@ -80,7 +91,7 @@ class Image:
     def pull(self) -> None:
         try:
             log_stream = self.docker_client.api.pull(
-                self.name, self.tag, stream=True, decode=True
+                repository=self.repo, tag=self.tag, stream=True, decode=False
             )
             self._process_transfer_log_stream(log_stream)
             self._loaded = True
@@ -133,7 +144,7 @@ class Image:
     def push(self) -> None:
         try:
             log_stream = self.docker_client.images.push(
-                repository=self.repo, tag=self.tag, stream=True, decode=True
+                repository=self.repo, tag=self.tag, stream=True, decode=False
             )
             self._process_transfer_log_stream(log_stream)
         except docker.errors.APIError as error:

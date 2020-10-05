@@ -24,7 +24,7 @@ if [ $success == 0 ]; then
 fi
 
 printf "\n"
-jq -M . < /version.json
+python3 -m json.tool /version.json
 printf "\n"
 
 exec container-prefab $@

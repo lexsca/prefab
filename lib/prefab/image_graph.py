@@ -63,12 +63,13 @@ class ImageGraph:
                 raise
             else:
                 error_name = type(error).__name__
-                image.logger.info(f"{color.yellow(image.name)} {error_name}: {error}")
+                error_message = color.red(f"{error_name}: {error}")
+                image.logger.info(f"{color.yellow(image.name)} {error_message}")
                 image.logger.info(
                     f"{color.yellow(image.name)} {error_name} in allowed_pull_errors, continuing..."
                 )
 
-    def load_target_image(self, image: Image) -> bool:
+    def _load_target_image(self, image: Image) -> bool:
         if image.is_loaded:
             image.logger.info(f"{color.yellow(image.name)} Image loaded")
         else:
@@ -81,6 +82,23 @@ class ImageGraph:
 
         return image.is_loaded
 
+    def load_target_image(self, image: Image) -> bool:
+        is_loaded = False
+
+        try:
+            is_loaded = self._load_target_image(image)
+        except E.ImageValidationError as error:
+            if not self.config.build_on_validate_error:
+                raise
+            else:
+                error_message = color.red(f"ImageValidationError: {error}")
+                image.logger.warning(f"{color.yellow(image.name)} {error_message}")
+                image.logger.warning(
+                    f"{color.yellow(image.name)} build_on_validate_error enabled, continuing..."
+                )
+
+        return is_loaded
+
     @staticmethod
     def display_image_build_options(image: Image) -> None:
         json_text = json.dumps(image.build_options, sort_keys=True, indent=4)
@@ -92,24 +110,26 @@ class ImageGraph:
         for line in json_lines:
             image.logger.info(color.green(line))
 
-    def should_load_target_image(self, target: str) -> bool:
-        # only load images if no upstream dependencies were (re)built
-        return not any(image for image in self.targets[target] if image.was_built)
+    def should_build_target_image(self, target: str) -> bool:
+        # image must be built if any upstream dependencies were (re)built
+        return any(image for image in self.targets[target] if image.was_built)
 
-    def _build_cleanup(self, image: Image) -> None:
+    def _build_image(self, image: Image) -> None:
+        image.logger.info(f"{color.yellow(image.name)} Trying build...")
+        self.display_image_build_options(image)
+        image.build()
+
         if self.config.prune_after_build:
             image.prune()
 
     def build_target_images(self, target: str) -> None:
         for image in self.targets[target]:
-            if self.should_load_target_image(target):
-                self.load_target_image(image)
+            if self.should_build_target_image(target):
+                self._build_image(image)
+                continue
 
-            if not image.is_loaded:
-                image.logger.info(f"{color.yellow(image.name)} Trying build...")
-                self.display_image_build_options(image)
-                image.build()
-                self._build_cleanup(image)
+            if not self.load_target_image(image):
+                self._build_image(image)
 
     def display_build_target(self, target: str) -> None:
         images = dict(map(reversed, self.images.items()))
@@ -145,7 +165,7 @@ class ImageGraph:
 
         for image in self.images.values():
             if image.is_loaded:
-                if image.was_pulled:
+                if image.was_pulled and not image.was_built:
                     image.logger.info(
                         f"{color.yellow(image.name)} Skipping push of pulled image"
                     )

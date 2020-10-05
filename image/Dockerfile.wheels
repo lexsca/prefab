@@ -1,0 +1,8 @@
+ARG prefab_base
+
+FROM $prefab_base as wheels
+COPY requirements.txt requirements.txt
+RUN pip wheel -w /wheels -r requirements.txt
+
+FROM scratch
+COPY --from=wheels /wheels /wheels

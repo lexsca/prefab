@@ -3,7 +3,7 @@
 
 IMAGE_REPO ?= quay.io/lexsca/prefab
 VERSION ?= $(shell TZ=UTC git log -1 --format='%cd' \
-	--date='format-local:%y.%m.%d%H%M' HEAD)
+	--date='format-local:%y.%-m.%-d%H%M' HEAD)
 VERSION_PY ?= lib/prefab/version.py
 RELEASE_TAG ?= $(VERSION)
 
@@ -20,19 +20,25 @@ clean:
 	find . -depth -type f -name '*.pyc' -exec /bin/rm -fr {} +
 	$(MAKE) -C docs clean
 
+docker-clean:
+	docker system prune -af
+	docker volume prune -f
+
 version:
 	echo '__version__ = "$(VERSION)"' > $(VERSION_PY)
 
 build: clean version
 	python setup.py sdist bdist_wheel
-	cp dist/*.whl image
+	cp dist/container_prefab-$(VERSION)-py3-none-any.whl image
+	ln -fs container_prefab-$(VERSION)-py3-none-any.whl image/current-wheel
 	cp requirements.txt image
-	docker build --squash -t $(IMAGE_REPO):$(VERSION) image
+	cd image && PYTHONPATH=../lib ../bin/container-prefab -r $(IMAGE_REPO) \
+		-t app:$(VERSION)
 	docker tag $(IMAGE_REPO):$(VERSION) $(IMAGE_REPO):latest
-	docker image prune -f
 
 push-image:
-	docker push $(IMAGE_REPO):$(VERSION)
+	cd image && PYTHONPATH=../lib ../bin/container-prefab -r $(IMAGE_REPO) \
+		-t app:$(VERSION) -p
 	docker push $(IMAGE_REPO):latest
 
 upload-pypi:
@@ -42,7 +48,7 @@ push-release-tag:
 	git tag $(RELEASE_TAG) HEAD
 	git push origin $(RELEASE_TAG)
 
-publish: test version build upload-pypi push-image push-release-tag
+publish: test build upload-pypi push-image push-release-tag
 
 requirements.txt: requirements.in
 	pip-compile -v requirements.in
@@ -57,8 +63,7 @@ install-requirements: requirements.txt requirements-dev.txt
 
 refesh-requirements:
 	rm -f requirements.txt requirements-dev.txt
-	$(MAKE) requirements.txt
-	$(MAKE) requirements-dev.txt
+	$(MAKE) install-requirements
 
 format:
 	black .

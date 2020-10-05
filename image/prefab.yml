@@ -1,0 +1,22 @@
+targets:
+  app:
+    dockerfile: Dockerfile.app
+    depends_on:
+      - wheels
+      - base
+    watch_files:
+      - Dockerfile.app
+      - current-wheel
+
+  wheels:
+    dockerfile: Dockerfile.wheels
+    depends_on:
+      - base
+    watch_files:
+      - Dockerfile.wheels
+      - requirements.txt
+
+  base:
+    dockerfile: Dockerfile.base
+    watch_files:
+      - Dockerfile.base
