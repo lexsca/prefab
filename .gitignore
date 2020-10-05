@@ -11,3 +11,5 @@ dist/
 *.egg-info
 lib/prefab/version.py
 doc/_build
+image/current-wheel
+image/requirements.txt
