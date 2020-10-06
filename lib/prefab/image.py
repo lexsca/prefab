@@ -43,6 +43,8 @@ class Image:
     ) -> Generator[Dict[str, Any], None, None]:
         for chunk in chunker:
             for line in chunk.splitlines():
+                if not line:
+                    continue
                 try:
                     yield json.loads(line)
                 except json.decoder.JSONDecodeError:

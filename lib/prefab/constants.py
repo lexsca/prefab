@@ -11,6 +11,7 @@ DEFAULT_BUILD_OPTIONS: Dict[str, Any] = {
     "forcerm": True,
     "path": ".",
     "rm": True,
+    "squash": True,
 }
 DEFAULT_BUILDARG_PREFIX = "prefab_"
 DEFAULT_BUILD_ON_VALIDATE_ERROR = True

@@ -8,7 +8,7 @@ COPY --from=wheels /wheels /wheels
 COPY *.whl /wheels
 
 RUN pip3 install /wheels/*.whl && \
-    rm -fr /wheels && \
+    rm -fr /wheels /usr/lib/python3.8/site-packages/{pip,setuptools} && \
     find / -type d -name __pycache__ -exec /bin/rm -fr {} + && \
     find / -depth -type f -name '*.pyc' -exec /bin/rm -fr {} +
 
