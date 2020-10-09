@@ -28,6 +28,7 @@ def test_build_from_scratch():
             "decode": True,
             "labels": {"pacifist-kept": "chewy-uncouth"},
             "tag": "sunlit-sing:aspect-workbag",
+            "squash": False,
         },
     }
     image = Image(repo="sunlit-sing", tag="aspect-workbag", build_options=build_options)
