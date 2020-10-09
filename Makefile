@@ -15,7 +15,7 @@ help:
 
 clean:
 	rm -fr lib/*.egg-info dist build .pytest_cache $(VERSION_PY) \
-		image/*.whl image/requirements.txt
+		image/*.whl image/requirements.txt image/current-wheel .coverage
 	find . -type d -name __pycache__ -exec /bin/rm -fr {} +
 	find . -depth -type f -name '*.pyc' -exec /bin/rm -fr {} +
 	$(MAKE) -C docs clean
