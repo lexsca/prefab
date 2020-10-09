@@ -57,6 +57,8 @@ class ImageFactory:
         hasher = self.get_hasher()
         target_logger = self.get_target_logger(target)
 
+        hasher.update(target.encode())
+
         for path in self.config.get_target(target)["watch_files"]:
             digest = self.get_file_digest(path)
             hasher.update(digest.encode())
