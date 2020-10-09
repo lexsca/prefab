@@ -4,13 +4,15 @@ import os
 import pytest
 
 from prefab import constants as C
-from prefab.image import Image
+from prefab.image import DockerImage
 
 
 @pytest.mark.skipif(not os.path.exists("/var/run/docker.sock"), reason="docker missing")
 def test_pull_prefab_none():
     build_options = {"labels": {"prefab.target": "none"}}
-    image = Image(repo="quay.io/lexsca/prefab", tag="none", build_options=build_options)
+    image = DockerImage(
+        repo="quay.io/lexsca/prefab", tag="none", build_options=build_options
+    )
     image.pull()
     image.validate()
     image.remove()
@@ -31,7 +33,9 @@ def test_build_from_scratch():
             "squash": False,
         },
     }
-    image = Image(repo="sunlit-sing", tag="aspect-workbag", build_options=build_options)
+    image = DockerImage(
+        repo="sunlit-sing", tag="aspect-workbag", build_options=build_options
+    )
     image.build()
     image.validate()
     image.remove()
@@ -41,6 +45,6 @@ def test_build_from_scratch():
 
 @pytest.mark.skipif(not os.path.exists("/var/run/docker.sock"), reason="docker missing")
 def test_loaded_does_not_raise_ImageNotFoundError():
-    image = Image(repo="scratch", tag=None, build_options={})
+    image = DockerImage(repo="scratch", tag=None, build_options={})
 
     assert not image.is_loaded

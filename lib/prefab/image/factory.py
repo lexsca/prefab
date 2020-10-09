@@ -2,11 +2,11 @@ import functools
 import hashlib
 from typing import Any, Callable, Dict, Optional
 
-from . import constants as C
-from . import errors as E
-from .config import Config
-from .image import Image
-from .logger import logger, TargetLoggerAdapter
+from .. import constants as C
+from .. import errors as E
+from ..config import Config
+from ..logger import logger, TargetLoggerAdapter
+from .docker import DockerImage
 
 
 class ImageFactory:
@@ -15,7 +15,7 @@ class ImageFactory:
         config: Config,
         repo: str,
         tags: Dict[str, str],
-        image_constructor: Callable = Image,
+        image_constructor: Callable = DockerImage,
     ) -> None:
         self.config: Config = config
         self.repo: str = repo
@@ -23,7 +23,7 @@ class ImageFactory:
         self.image_constructor: Callable = image_constructor
         self.digests: Dict[str, str] = dict()
 
-    def __call__(self, target: str) -> Image:
+    def __call__(self, target: str) -> DockerImage:
         return self.image_constructor(
             repo=self.repo,
             tag=self.get_target_tag(target),

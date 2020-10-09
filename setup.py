@@ -18,7 +18,7 @@ setup(
     python_requires=">=3.8",
     url="https://github.com/lexsca/prefab.git",
     package_dir={"": "lib"},
-    packages=["prefab"],
+    packages=["prefab", "prefab.image"],
     scripts=["bin/container-prefab"],
     install_requires=["docker", "pyyaml"],
 )

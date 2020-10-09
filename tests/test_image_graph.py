@@ -2,9 +2,7 @@ import pytest
 
 from prefab import errors as E
 from prefab.config import Config
-from prefab.image import FakeImage
-from prefab.image_factory import ImageFactory
-from prefab.image_graph import ImageGraph
+from prefab.image import FakeImage, ImageFactory, ImageGraph
 
 
 def resolve_graph(targets, target):

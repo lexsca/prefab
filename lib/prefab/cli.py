@@ -11,9 +11,7 @@ from . import __version__ as VERSION
 from .color import color
 from .config import Config
 from .logger import logger
-from .image import Image, FakeImage
-from .image_factory import ImageFactory
-from .image_graph import ImageGraph
+from .image import DockerImage, FakeImage, ImageFactory, ImageGraph
 
 
 def parse_options(args: List[str]) -> argparse.Namespace:
@@ -125,12 +123,12 @@ def cli(args: List[str]) -> None:
     build_start_time = time.monotonic()
     options, config = parse_args(args)
 
-    image_constructor = FakeImage if options.noop else Image
+    image_constructor = FakeImage if options.noop else DockerImage
     image_factory = ImageFactory(config, options.repo, options.tags, image_constructor)
     image_graph = ImageGraph(config, image_factory)
     image_graph.build(options.targets)
     logger.info(
-        f"\n{color.green('Build elapsed time:')} {elapsed_time(build_start_time)}"
+        f"\n{color.green('Build elapsed time:')} {elapsed_time(build_start_time)}\n"
     )
 
     if options.push:

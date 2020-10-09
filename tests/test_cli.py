@@ -16,9 +16,14 @@ def test_dry_run(caplog, prefab_yaml_path):
         "--push",
     ]
     cli(args)
+    target_digest_log_message = (
+        "[a] target_digest sha256:b65daad29dc4b3d2efec"
+        "c50e7cdd1a6f0c1f526670778013a995a5c89627640c"
+    )
 
     assert caplog.records[-11].message == "[a] quay.io/lexsca/prefab:a Build succeeded"
     assert caplog.records[-3].message == "[a] quay.io/lexsca/prefab:a Pushed"
+    assert target_digest_log_message in caplog.text
 
 
 def test_tag_duplicates_disallowed(capsys, prefab_yaml_path):

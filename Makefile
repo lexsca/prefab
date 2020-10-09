@@ -36,6 +36,11 @@ build: clean version
 		-t app:$(VERSION)
 	docker tag $(IMAGE_REPO):$(VERSION) $(IMAGE_REPO):latest
 
+ouroboros:
+	docker run --rm -v $(shell /bin/pwd)/image:/build -w /build \
+		-v $(HOME)/.docker/config.json:/authfile --privileged \
+		quay.io/lexsca/prefab -r quay.io/lexsca/prefab -t app:$(VERSION)
+
 push-image:
 	cd image && PYTHONPATH=../lib ../bin/container-prefab -r $(IMAGE_REPO) \
 		-t app:$(VERSION) -p

@@ -1,21 +1,21 @@
 import json
 from typing import Any, Callable, Dict, List, Tuple
 
-from . import errors as E
-from .color import color
-from .config import Config
-from .image import Image
-from .logger import logger
+from .. import errors as E
+from ..color import color
+from ..config import Config
+from ..logger import logger
+from .docker import DockerImage
 
 
 class ImageGraph:
     def __init__(self, config: Config, image_factory: Callable) -> None:
         self.config: Config = config
         self.image_factory: Callable = image_factory
-        self.images: Dict[str, Image] = {}
-        self.targets: Dict[str, List[Image]] = {}
+        self.images: Dict[str, DockerImage] = {}
+        self.targets: Dict[str, List[DockerImage]] = {}
 
-    def configure_target_image(self, target: str) -> Image:
+    def configure_target_image(self, target: str) -> DockerImage:
         if target not in self.images:
             image = self.images[target] = self.image_factory(target)
             image.logger.info(f"target_image {color.yellow(image.name)}")
@@ -23,8 +23,8 @@ class ImageGraph:
         return self.images[target]
 
     def _resolve_target_images(
-        self, target: str, images: List[Image], vectors: List[Tuple[str, str]]
-    ) -> List[Image]:
+        self, target: str, images: List[DockerImage], vectors: List[Tuple[str, str]]
+    ) -> List[DockerImage]:
         # use a depth-first search to unroll dependencies and detect loops.
         # targets have a directed dependency stream. if an upstream target
         # dependency changes, downstream dependencies also change, forcing
@@ -46,7 +46,7 @@ class ImageGraph:
 
         return images
 
-    def resolve_target_images(self, target: str) -> List[Image]:
+    def resolve_target_images(self, target: str) -> List[DockerImage]:
         return self._resolve_target_images(target=target, images=[], vectors=[])
 
     @property
@@ -54,7 +54,7 @@ class ImageGraph:
         allowed_error_names = self.config.allowed_pull_errors
         return tuple(getattr(E, name) for name in dir(E) if name in allowed_error_names)
 
-    def pull_target_image(self, image: Image) -> None:
+    def pull_target_image(self, image: DockerImage) -> None:
         try:
             image.logger.info(f"{color.yellow(image.name)} Trying pull...")
             image.pull()
@@ -69,7 +69,7 @@ class ImageGraph:
                     f"{color.yellow(image.name)} {error_name} in allowed_pull_errors, continuing..."
                 )
 
-    def _load_target_image(self, image: Image) -> bool:
+    def _load_target_image(self, image: DockerImage) -> bool:
         if image.is_loaded:
             image.logger.info(f"{color.yellow(image.name)} Image loaded")
         else:
@@ -82,7 +82,7 @@ class ImageGraph:
 
         return image.is_loaded
 
-    def load_target_image(self, image: Image) -> bool:
+    def load_target_image(self, image: DockerImage) -> bool:
         is_loaded = False
 
         try:
@@ -100,7 +100,7 @@ class ImageGraph:
         return is_loaded
 
     @staticmethod
-    def display_image_build_options(image: Image) -> None:
+    def display_image_build_options(image: DockerImage) -> None:
         json_text = json.dumps(image.build_options, sort_keys=True, indent=4)
         json_lines = json_text.splitlines()
         image.logger.info(
@@ -114,7 +114,7 @@ class ImageGraph:
         # image must be built if any upstream dependencies were (re)built
         return any(image for image in self.targets[target] if image.was_built)
 
-    def _build_image(self, image: Image) -> None:
+    def _build_image(self, image: DockerImage) -> None:
         image.logger.info(f"{color.yellow(image.name)} Trying build...")
         self.display_image_build_options(image)
         image.build()
@@ -161,7 +161,7 @@ class ImageGraph:
             self.build_target_images(target)
 
     def push(self) -> None:
-        logger.info(color.magenta("\nPushing images"))
+        logger.info(color.magenta("Pushing images"))
 
         for image in self.images.values():
             if image.is_loaded:
