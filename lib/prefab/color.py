@@ -1,31 +1,25 @@
 from typing import Dict
 
+from . import constants as C
+
 
 class Color:
-    _map: Dict[str, str] = {
-        "black": "\x1b[30m",
-        "red": "\x1b[31m",
-        "green": "\x1b[32m",
-        "yellow": "\x1b[33m",
-        "blue": "\x1b[34m",
-        "magenta": "\x1b[35m",
-        "cyan": "\x1b[36m",
-        "white": "\x1b[37m",
-    }
-    _reset: str = "\x1b[0m"
+    reset: str = "\x1b[0m"
 
-    def __init__(self) -> None:
+    def __init__(self, style: Dict[str, int] = C.DEFAULT_COLOR_STYLE) -> None:
+        self.enabled: bool = True
+        self.style: Dict[str, int] = style.copy()
+
         cls = type(self)
 
-        for color, code in self._map.items():
-            if not hasattr(cls, color):
+        for style in self.style:
+            if not hasattr(cls, style):
 
-                def colorizer(this, text, code=code) -> str:
-                    return f"{code}{text}{self._reset}" if this.enabled else text
+                def colorizer(this, text: str, style: str = style) -> str:
+                    code = f"\x1b[38;5;{self.style.get(style, 0)}m"
+                    return f"{code}{text}{self.reset}" if this.enabled else text
 
-                setattr(cls, color, colorizer)
-
-        self.enabled = True
+                setattr(cls, style, colorizer)
 
 
 color = Color()

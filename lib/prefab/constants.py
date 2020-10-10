@@ -15,6 +15,14 @@ DEFAULT_BUILD_OPTIONS: Dict[str, Any] = {
 }
 DEFAULT_BUILDARG_PREFIX = "prefab_"
 DEFAULT_BUILD_ON_VALIDATE_ERROR = True
+DEFAULT_COLOR_STYLE = {
+    "config": 29,
+    "elapsed": 29,
+    "error": 1,
+    "header": 129,
+    "image": 185,
+    "target": 33,
+}
 DEFAULT_CONFIG_FILE = "prefab.yml"
 DEFAULT_DIGEST_LABEL = "prefab.digest"
 DEFAULT_HASH_ALGORITHM = "sha256"

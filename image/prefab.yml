@@ -1,3 +1,10 @@
+options:
+  color_style:
+    header: 132
+    target: 242
+    image: 32
+    elapsed: 42
+
 targets:
   app:
     dockerfile: Dockerfile.app

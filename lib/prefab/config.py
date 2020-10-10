@@ -25,7 +25,7 @@ class ConfigBase(collections.UserDict):
         names = [name for name in dir(cls) if isinstance(getattr(cls, name), property)]
         for name in sorted(names):
             value = json.dumps(getattr(self, name))
-            logger.info(f"{name}: {color.green(value)}")
+            logger.info(f"{name}: {color.config(value)}")
 
     def validate_config(self) -> None:
         if "targets" not in self.data:
@@ -100,6 +100,10 @@ class Config(ConfigBase):
         return self.get_option(
             "build_on_validate_error", C.DEFAULT_BUILD_ON_VALIDATE_ERROR
         )
+
+    @property
+    def color_style(self) -> Dict[str, int]:
+        return self.get_option("color_style", C.DEFAULT_COLOR_STYLE)
 
     @property
     def digest_label(self) -> str:

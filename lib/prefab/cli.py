@@ -85,16 +85,18 @@ def parse_options(args: List[str]) -> argparse.Namespace:
 
 def parse_args(args: List[str]) -> Tuple[argparse.Namespace, Config]:
     options = parse_options(args)
+    config = Config.from_yaml_filepath(options.config_file)
 
     if not options.color:
         color.enabled = False
+    else:
+        color.style.update(config.color_style)
 
-    logger.info(color.magenta(f"\nContainer Prefab v:{VERSION}"))
-    logger.info(f"Called with args: {color.green(json.dumps(args))}")
-    logger.info(f"Loading config file: {color.green(options.config_file)}")
-    config = Config.from_yaml_filepath(options.config_file)
+    logger.info(color.header(f"\nContainer Prefab v:{VERSION}"))
+    logger.info(f"Called with args: {color.config(json.dumps(args))}")
+    logger.info(f"Loading config file: {color.config(options.config_file)}")
 
-    logger.info(color.magenta("\nConfig options:"))
+    logger.info(color.header("\nConfig options:"))
     config.display_options()
 
     return options, config
@@ -128,17 +130,17 @@ def cli(args: List[str]) -> None:
     image_graph = ImageGraph(config, image_factory)
     image_graph.build(options.targets)
     logger.info(
-        f"\n{color.green('Build elapsed time:')} {elapsed_time(build_start_time)}\n"
+        f"\n{color.elapsed('Build elapsed time:')} {elapsed_time(build_start_time)}\n"
     )
 
     if options.push:
         push_start_time = time.monotonic()
         image_graph.push()
         logger.info(
-            f"\n{color.green('Push elapsed time: ')} {elapsed_time(push_start_time)}"
+            f"\n{color.elapsed('Push elapsed time: ')} {elapsed_time(push_start_time)}"
         )
         logger.info(
-            f"{color.green('Total elapsed time:')} {elapsed_time(build_start_time)}\n"
+            f"{color.elapsed('Total elapsed time:')} {elapsed_time(build_start_time)}\n"
         )
 
 
@@ -147,6 +149,6 @@ def main() -> None:
         cli(sys.argv[1:])
         status = 0
     except Exception:
-        logger.error(color.red(traceback.format_exc()))
+        logger.error(color.error(traceback.format_exc()))
         status = 1
     sys.exit(status)

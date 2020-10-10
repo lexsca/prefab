@@ -18,7 +18,7 @@ class ImageGraph:
     def configure_target_image(self, target: str) -> DockerImage:
         if target not in self.images:
             image = self.images[target] = self.image_factory(target)
-            image.logger.info(f"target_image {color.yellow(image.name)}")
+            image.logger.info(f"target_image {color.image(image.name)}")
 
         return self.images[target]
 
@@ -56,29 +56,29 @@ class ImageGraph:
 
     def pull_target_image(self, image: DockerImage) -> None:
         try:
-            image.logger.info(f"{color.yellow(image.name)} Trying pull...")
+            image.logger.info(f"{color.image(image.name)} Trying pull...")
             image.pull()
         except Exception as error:
             if not isinstance(error, self.allowed_pull_errors):
                 raise
             else:
                 error_name = type(error).__name__
-                error_message = color.red(f"{error_name}: {error}")
-                image.logger.info(f"{color.yellow(image.name)} {error_message}")
+                error_message = color.error(f"{error_name}: {error}")
+                image.logger.info(f"{color.image(image.name)} {error_message}")
                 image.logger.info(
-                    f"{color.yellow(image.name)} {error_name} in allowed_pull_errors, continuing..."
+                    f"{color.image(image.name)} {error_name} in allowed_pull_errors, continuing..."
                 )
 
     def _load_target_image(self, image: DockerImage) -> bool:
         if image.is_loaded:
-            image.logger.info(f"{color.yellow(image.name)} Image loaded")
+            image.logger.info(f"{color.image(image.name)} Image loaded")
         else:
-            image.logger.info(f"{color.yellow(image.name)} Image not loaded")
+            image.logger.info(f"{color.image(image.name)} Image not loaded")
             self.pull_target_image(image)
 
         if image.is_loaded and self.config.validate_image:
             image.validate()
-            image.logger.info(f"{color.yellow(image.name)} Image validated")
+            image.logger.info(f"{color.image(image.name)} Image validated")
 
         return image.is_loaded
 
@@ -91,10 +91,10 @@ class ImageGraph:
             if not self.config.build_on_validate_error:
                 raise
             else:
-                error_message = color.red(f"ImageValidationError: {error}")
-                image.logger.warning(f"{color.yellow(image.name)} {error_message}")
+                error_message = color.error(f"ImageValidationError: {error}")
+                image.logger.warning(f"{color.image(image.name)} {error_message}")
                 image.logger.warning(
-                    f"{color.yellow(image.name)} build_on_validate_error enabled, continuing..."
+                    f"{color.image(image.name)} build_on_validate_error enabled, continuing..."
                 )
 
         return is_loaded
@@ -104,18 +104,18 @@ class ImageGraph:
         json_text = json.dumps(image.build_options, sort_keys=True, indent=4)
         json_lines = json_text.splitlines()
         image.logger.info(
-            f"{color.yellow(image.name)} build_options {color.green(json_lines.pop(0))}"
+            f"{color.image(image.name)} build_options {color.config(json_lines.pop(0))}"
         )
 
         for line in json_lines:
-            image.logger.info(color.green(line))
+            image.logger.info(color.config(line))
 
     def should_build_target_image(self, target: str) -> bool:
         # image must be built if any upstream dependencies were (re)built
         return any(image for image in self.targets[target] if image.was_built)
 
     def _build_image(self, image: DockerImage) -> None:
-        image.logger.info(f"{color.yellow(image.name)} Trying build...")
+        image.logger.info(f"{color.image(image.name)} Trying build...")
         self.display_image_build_options(image)
         image.build()
 
@@ -133,25 +133,25 @@ class ImageGraph:
 
     def display_build_target(self, target: str) -> None:
         images = dict(map(reversed, self.images.items()))
-        targets = [color.cyan(f"[{images[image]}]") for image in self.targets[target]]
+        targets = [color.target(f"[{images[image]}]") for image in self.targets[target]]
 
         if len(targets) > 1:
-            build_order = color.magenta("using build order ")
-            build_order += color.magenta(", ").join(targets)
+            build_order = color.header("using build order ")
+            build_order += color.header(", ").join(targets)
         else:
             build_order = ""
 
         logger.info(
             "\n{0} {1} {2} {3}".format(
-                color.magenta("Building"),
-                color.cyan(f"[{target}]"),
-                color.magenta("target"),
+                color.header("Building"),
+                color.target(f"[{target}]"),
+                color.header("target"),
                 build_order,
             )
         )
 
     def build(self, targets: List[str]) -> None:
-        logger.info(color.magenta("\nResolving dependency graph"))
+        logger.info(color.header("\nResolving dependency graph"))
 
         for target in targets:
             self.targets[target] = self.resolve_target_images(target)
@@ -161,14 +161,14 @@ class ImageGraph:
             self.build_target_images(target)
 
     def push(self) -> None:
-        logger.info(color.magenta("Pushing images"))
+        logger.info(color.header("Pushing images"))
 
         for image in self.images.values():
             if image.is_loaded:
                 if image.was_pulled and not image.was_built:
                     image.logger.info(
-                        f"{color.yellow(image.name)} Skipping push of pulled image"
+                        f"{color.image(image.name)} Skipping push of pulled image"
                     )
                 else:
-                    image.logger.info(f"{color.yellow(image.name)} Trying push...")
+                    image.logger.info(f"{color.image(image.name)} Trying push...")
                     image.push()
