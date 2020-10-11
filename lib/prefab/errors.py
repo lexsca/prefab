@@ -30,10 +30,6 @@ class InvalidConfigError(ContainerPrefabError):
     pass
 
 
-class TargetTagError(ContainerPrefabError):
-    pass
-
-
 class TargetCyclicError(ContainerPrefabError):
     pass
 

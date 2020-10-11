@@ -90,14 +90,17 @@ class DockerImage:
 
         return self._loaded
 
+    def _pull_success(self) -> None:
+        self._loaded = True
+        self.was_pulled = True
+
     def pull(self) -> None:
         try:
             log_stream = self.docker_client.api.pull(
                 repository=self.repo, tag=self.tag, stream=True, decode=False
             )
             self._process_transfer_log_stream(log_stream)
-            self._loaded = True
-            self.was_pulled = True
+            self._pull_success()
         except docker.errors.NotFound as error:
             raise E.ImageNotFoundError(error.explanation)
         except docker.errors.APIError as error:

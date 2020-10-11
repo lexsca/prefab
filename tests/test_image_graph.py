@@ -1,13 +1,16 @@
 import pytest
 
 from prefab import errors as E
+from prefab.color import color
 from prefab.config import Config
 from prefab.image import FakeImage, ImageFactory, ImageGraph
 
 
 def resolve_graph(targets, target):
     config = Config({"targets": targets})
-    image_factory = ImageFactory(config, "repo", dict(), FakeImage)
+    image_factory = ImageFactory(
+        config, "repo", tags=dict(), image_constructor=FakeImage
+    )
     image_factory.digests = {target: target for target in targets}
     image_graph = ImageGraph(config, image_factory)
     images = image_graph.resolve_target_images(target)
@@ -158,3 +161,36 @@ def test_long_loop():
     for target in targets:
         with pytest.raises(E.TargetCyclicError):
             resolve_graph(targets, target)
+
+
+def test_build_on_validation_error(caplog, monkeypatch):
+    monkeypatch.setattr(color, "enabled", False)
+
+    targets = {
+        "a": {
+            "dockerfile": "Dockerfile.a",
+        }
+    }
+    config = Config({"targets": targets})
+    image_factory = ImageFactory(config, "repo", dict(), FakeImage)
+    image_graph = ImageGraph(config, image_factory)
+    image_graph.images = {
+        "a": FakeImage(
+            "repo",
+            "tag",
+            build_options=dict(),
+            loaded=True,
+            validate=E.ImageValidationError,
+        )
+    }
+
+    image_graph.build(["a"])
+
+    assert caplog.messages[2:] == [
+        "repo:tag Image loaded",
+        "repo:tag ImageValidationError: ",
+        "repo:tag build_on_validate_error enabled, continuing...",
+        "repo:tag Trying build...",
+        "repo:tag build_options {}",
+        "repo:tag Build succeeded",
+    ]
