@@ -19,7 +19,7 @@ targets:
       - b
       - c
     watch_files:
-      - tests/fixtures/prefab.yml
+      - prefab.yml
     build_options:
       labels:
         fixture: "true"
@@ -30,9 +30,9 @@ targets:
     depends_on:
       - c
     watch_files:
-      - tests/fixtures/prefab.yml
+      - prefab.yml
 
   c:
     dockerfile: Dockerfile.c
     watch_files:
-      - tests/fixtures/prefab.yml
+      - prefab.yml

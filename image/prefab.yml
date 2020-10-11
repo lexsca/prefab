@@ -12,7 +12,6 @@ targets:
       - wheels
       - base
     watch_files:
-      - Dockerfile.app
       - current-wheel
 
   wheels:
@@ -20,10 +19,7 @@ targets:
     depends_on:
       - base
     watch_files:
-      - Dockerfile.wheels
       - requirements.txt
 
   base:
     dockerfile: Dockerfile.base
-    watch_files:
-      - Dockerfile.base

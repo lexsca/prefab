@@ -1,6 +1,6 @@
 import functools
 import hashlib
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict
 
 from .. import constants as C
 from .. import errors as E
@@ -56,18 +56,19 @@ class ImageFactory:
     def _get_target_digest(self, target: str) -> str:
         hasher = self.get_hasher()
         target_logger = self.get_target_logger(target)
+        target_config = self.config.get_target(target)
 
         hasher.update(target.encode())
 
-        for path in self.config.get_target(target)["watch_files"]:
+        for path in [target_config.get("dockerfile")] + target_config["watch_files"]:
             digest = self.get_file_digest(path)
             hasher.update(digest.encode())
-            target_logger.info(f"watch_files {path} {hasher.name}:{digest}")
+            target_logger.info(f"file_digest {path} {hasher.name}:{digest}")
 
-        for dependent in self.config.get_target(target)["depends_on"]:
-            hasher.update(self.digests[dependent].encode())
+        for dependency in target_config["depends_on"]:
+            hasher.update(self.digests[dependency].encode())
             target_logger.info(
-                f"depends_on {dependent} {hasher.name}:{self.digests[dependent]}"
+                f"depends_on {dependency} {hasher.name}:{self.digests[dependency]}"
             )
 
         digest = hasher.hexdigest()
@@ -75,38 +76,34 @@ class ImageFactory:
 
         return digest
 
-    def get_target_digest(self, target: str) -> Optional[str]:
-        if target not in self.digests and self.config.get_target(target)["watch_files"]:
+    def get_target_digest(self, target: str) -> str:
+        if target not in self.digests:
             self.digests[target] = self._get_target_digest(target)
 
-        return self.digests.get(target)
+        return self.digests[target]
 
     def get_target_tag(self, target: str) -> str:
         if target not in self.tags:
             digest = self.get_target_digest(target)
-            if digest is not None:
-                self.tags[target] = digest[: self.config.short_digest_size]
-            else:
-                raise E.TargetTagError(
-                    f"Target [{target}] has no watch_files and no explicit tag"
-                )
+            self.tags[target] = digest[: self.config.short_digest_size]
+
         return self.tags[target]
 
     def get_target_labels(self, target: str) -> Dict[str, str]:
-        labels = {self.config.target_label: target}
+        digest = self.get_target_digest(target)
+        hasher = self.get_hasher()
 
-        if digest := self.get_target_digest(target):
-            hasher = self.get_hasher()
-            labels[self.config.digest_label] = f"{hasher.name}:{digest}"
-
-        return labels
+        return {
+            self.config.target_label: target,
+            self.config.digest_label: f"{hasher.name}:{digest}",
+        }
 
     def get_target_buildargs(self, target: str) -> Dict[str, str]:
         buildargs = {}
 
-        for dependent in self.config.get_target(target)["depends_on"]:
-            arg = f"{self.config.buildarg_prefix}{dependent}"
-            value = f"{self.repo}:{self.get_target_tag(dependent)}"
+        for dependency in self.config.get_target(target)["depends_on"]:
+            arg = f"{self.config.buildarg_prefix}{dependency}"
+            value = f"{self.repo}:{self.get_target_tag(dependency)}"
             buildargs[arg] = value
 
         return buildargs

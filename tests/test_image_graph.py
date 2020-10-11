@@ -7,8 +7,8 @@ from prefab.image import FakeImage, ImageFactory, ImageGraph
 
 def resolve_graph(targets, target):
     config = Config({"targets": targets})
-    tags = {target: target for target in targets}
-    image_factory = ImageFactory(config, "repo", tags, FakeImage)
+    image_factory = ImageFactory(config, "repo", dict(), FakeImage)
+    image_factory.digests = {target: target for target in targets}
     image_graph = ImageGraph(config, image_factory)
     images = image_graph.resolve_target_images(target)
 

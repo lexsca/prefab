@@ -122,9 +122,9 @@ class ImageGraph:
         if self.config.prune_after_build:
             image.prune()
 
-    def build_target_images(self, target: str) -> None:
+    def build_target_images(self, target: str, force: bool = False) -> None:
         for image in self.targets[target]:
-            if self.should_build_target_image(target):
+            if force or self.should_build_target_image(target):
                 self._build_image(image)
                 continue
 
@@ -150,7 +150,7 @@ class ImageGraph:
             )
         )
 
-    def build(self, targets: List[str]) -> None:
+    def build(self, targets: List[str], force: bool = False) -> None:
         logger.info(color.header("\nResolving dependency graph"))
 
         for target in targets:
@@ -158,7 +158,7 @@ class ImageGraph:
 
         for target in targets:
             self.display_build_target(target)
-            self.build_target_images(target)
+            self.build_target_images(target, force)
 
     def push(self) -> None:
         logger.info(color.header("Pushing images"))

@@ -33,6 +33,12 @@ def parse_options(args: List[str]) -> argparse.Namespace:
         help="Show how targets would be built",
     )
     parser.add_argument(
+        "--force",
+        dest="force",
+        action="store_true",
+        help="Force targets to be built",
+    )
+    parser.add_argument(
         "--monochrome",
         "-m",
         dest="color",
@@ -72,6 +78,7 @@ def parse_options(args: List[str]) -> argparse.Namespace:
     for target in options._targets:
         target, _, tag = target.partition(":")
         options.targets.append(target)
+
         if tag and tag in tag_set:
             parser.exit(
                 status=2, message=f"{parser.format_help()}\nDuplicate tag: {tag}\n"
@@ -128,7 +135,7 @@ def cli(args: List[str]) -> None:
     image_constructor = FakeImage if options.noop else DockerImage
     image_factory = ImageFactory(config, options.repo, options.tags, image_constructor)
     image_graph = ImageGraph(config, image_factory)
-    image_graph.build(options.targets)
+    image_graph.build(options.targets, options.force)
     logger.info(
         f"\n{color.elapsed('Build elapsed time:')} {elapsed_time(build_start_time)}\n"
     )

@@ -12,3 +12,8 @@ sys.path.insert(0, LIB_PATH)
 @pytest.fixture
 def prefab_yaml_path():
     return os.path.join(FIXTURES_PATH, "prefab.yml")
+
+
+@pytest.fixture
+def chdir_fixtures(monkeypatch):
+    monkeypatch.chdir(FIXTURES_PATH)

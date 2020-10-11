@@ -3,7 +3,7 @@ import pytest
 from prefab.cli import cli
 
 
-def test_dry_run(caplog, prefab_yaml_path):
+def test_dry_run(caplog, prefab_yaml_path, chdir_fixtures):
     args = [
         "--dry-run",
         "--monochrome",
@@ -17,8 +17,8 @@ def test_dry_run(caplog, prefab_yaml_path):
     ]
     cli(args)
     target_digest_log_message = (
-        "[a] target_digest sha256:b65daad29dc4b3d2efec"
-        "c50e7cdd1a6f0c1f526670778013a995a5c89627640c"
+        "[a] target_digest sha256:ede6e265a9d5b9c90b27"
+        "c614317bd8d26ff2818390bc3d44479f07a6f6587a7f"
     )
 
     assert caplog.records[-11].message == "[a] quay.io/lexsca/prefab:a Build succeeded"
