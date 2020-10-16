@@ -6,6 +6,26 @@ from prefab.config import Config
 from prefab.image import FakeImage, ImageFactory, ImageGraph
 
 
+@pytest.fixture(autouse=True)
+def disable_color(monkeypatch):
+    monkeypatch.setattr(color, "enabled", False)
+
+
+@pytest.fixture
+def simple_graph():
+    targets = {
+        "a": {
+            "dockerfile": "Dockerfile.a",
+        }
+    }
+    config = Config({"targets": targets})
+    image_factory = ImageFactory(
+        config, "repo", tags=dict(), image_constructor=FakeImage
+    )
+
+    return ImageGraph(config, image_factory)
+
+
 def resolve_graph(targets, target):
     config = Config({"targets": targets})
     image_factory = ImageFactory(
@@ -163,18 +183,8 @@ def test_long_loop():
             resolve_graph(targets, target)
 
 
-def test_build_on_validation_error(caplog, monkeypatch):
-    monkeypatch.setattr(color, "enabled", False)
-
-    targets = {
-        "a": {
-            "dockerfile": "Dockerfile.a",
-        }
-    }
-    config = Config({"targets": targets})
-    image_factory = ImageFactory(config, "repo", dict(), FakeImage)
-    image_graph = ImageGraph(config, image_factory)
-    image_graph.images = {
+def test_build_on_validation_error(caplog, simple_graph):
+    simple_graph.images = {
         "a": FakeImage(
             "repo",
             "tag",
@@ -183,13 +193,35 @@ def test_build_on_validation_error(caplog, monkeypatch):
             validate=E.ImageValidationError,
         )
     }
-
-    image_graph.build(["a"])
+    simple_graph.build(["a"])
 
     assert caplog.messages[2:] == [
         "repo:tag Image loaded",
         "repo:tag ImageValidationError: ",
         "repo:tag build_on_validate_error enabled, continuing...",
+        "repo:tag Trying build...",
+        "repo:tag build_options {}",
+        "repo:tag Build succeeded",
+    ]
+
+
+def test_build_on_allowed_pull_error(caplog, simple_graph):
+    simple_graph.images = {
+        "a": FakeImage(
+            "repo",
+            "tag",
+            build_options=dict(),
+            loaded=False,
+            pull=E.ImageNotFoundError,
+        )
+    }
+    simple_graph.build(["a"])
+
+    assert caplog.messages[2:] == [
+        "repo:tag Image not loaded",
+        "repo:tag Trying pull...",
+        "repo:tag ImageNotFoundError: ",
+        "repo:tag ImageNotFoundError in allowed_pull_errors, continuing...",
         "repo:tag Trying build...",
         "repo:tag build_options {}",
         "repo:tag Build succeeded",
