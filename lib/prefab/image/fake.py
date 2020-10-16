@@ -2,15 +2,13 @@ import collections
 
 from .docker import DockerImage
 
-from .. import errors as E
-
 
 class FakeImage(DockerImage):
     def __init__(
         self,
         *args,
         loaded=False,
-        pull=E.ImageNotFoundError,
+        pull=None,
         validate=None,
         build=None,
         push=None,

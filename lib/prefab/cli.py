@@ -14,9 +14,10 @@ from .logger import logger
 from .image import DockerImage, FakeImage, ImageFactory, ImageGraph
 
 
-def parse_options(args: List[str]) -> argparse.Namespace:
-    description = "efficiently build container images"
+def _arg_parser() -> argparse.ArgumentParser:
+    description = "build container images faster"
     parser = argparse.ArgumentParser(description=description)
+
     parser.add_argument(
         "--config",
         "-c",
@@ -30,13 +31,13 @@ def parse_options(args: List[str]) -> argparse.Namespace:
         "--dry-run",
         dest="noop",
         action="store_true",
-        help="Show how targets would be built",
+        help="Show how targets would be built (implies --force)",
     )
     parser.add_argument(
         "--force",
         dest="force",
         action="store_true",
-        help="Force targets to be built",
+        help="Force targets to be rebuilt",
     )
     parser.add_argument(
         "--monochrome",
@@ -70,6 +71,11 @@ def parse_options(args: List[str]) -> argparse.Namespace:
         help="Image target(s) to build with optional custom image tag",
     )
 
+    return parser
+
+
+def parse_options(args: List[str]) -> argparse.Namespace:
+    parser = _arg_parser()
     options = parser.parse_args(args)
     options.tags = dict()
     options.targets = []
@@ -86,6 +92,9 @@ def parse_options(args: List[str]) -> argparse.Namespace:
         elif tag:
             options.tags[target] = tag
             tag_set.add(tag)
+
+    if options.noop:
+        options.force = True
 
     return options
 
