@@ -111,21 +111,11 @@ def parse_args(args: List[str]) -> Tuple[argparse.Namespace, Config]:
 
 def elapsed_time(monotonic_start: float) -> str:
     elapsed_time = datetime.timedelta(seconds=time.monotonic() - monotonic_start)
+    seconds = elapsed_time.seconds
+    category = 1 + (-1 if seconds < 10 else seconds // 60 if seconds < 240 else 4)
+    awards = ("⚡", "🚀", "🥇", "🥈", "🥉", "🐢")
 
-    if elapsed_time.seconds < 10:
-        award = "🛸"
-    elif elapsed_time.seconds < 60:
-        award = "🚀"
-    elif elapsed_time.seconds < 120:
-        award = "🥇"
-    elif elapsed_time.seconds < 180:
-        award = "🥈"
-    elif elapsed_time.seconds < 240:
-        award = "🥉"
-    else:
-        award = "🐢"
-
-    return f"{str(elapsed_time)[:-4]} {award}"
+    return f"{str(elapsed_time)[:-4]} {awards[category]}"
 
 
 def cli(args: List[str]) -> None:
