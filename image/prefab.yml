@@ -1,9 +1,12 @@
 options:
+  # https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit
   color_style:
-    header: 132
-    target: 242
-    image: 32
-    elapsed: 42
+    header: 208
+    target: 8
+    image: 6
+    elapsed: 220
+    error: 124
+    config: 98
 
 targets:
   app:

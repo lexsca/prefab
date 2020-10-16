@@ -16,6 +16,7 @@ class Color:
             if not hasattr(cls, style):
 
                 def colorizer(this, text: str, style: str = style) -> str:
+                    # https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit
                     code = f"\x1b[38;5;{self.style.get(style, 0)}m"
                     return f"{code}{text}{self.reset}" if this.enabled else text
 
