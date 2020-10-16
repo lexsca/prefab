@@ -30,7 +30,7 @@ class DockerImage:
 
         self.docker_client: docker.client.DockerClient = docker_client
 
-    def _log_transfer_message(self, log_entry) -> None:
+    def _log_transfer_message(self, log_entry: Dict[str, Any]) -> None:
         if "id" in log_entry:
             message = f"{log_entry.get('id')}: {log_entry.get('status')}"
         else:
@@ -62,7 +62,7 @@ class DockerImage:
 
             self._log_transfer_message(log_entry)
 
-    def _get_docker_image(self) -> Optional[docker.models.images.Image]:
+    def _get_docker_image(self) -> docker.models.images.Image:
         docker_image = None
 
         for image in self.docker_client.images.list(name=self.repo):

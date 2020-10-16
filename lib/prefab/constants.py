@@ -15,7 +15,7 @@ DEFAULT_BUILD_OPTIONS: Dict[str, Any] = {
 }
 DEFAULT_BUILDARG_PREFIX = "prefab_"
 DEFAULT_BUILD_ON_VALIDATE_ERROR = True
-DEFAULT_COLOR_STYLE = {
+DEFAULT_COLOR_STYLE: Dict[str, int] = {
     "config": 29,
     "elapsed": 29,
     "error": 1,

@@ -1,4 +1,5 @@
 import logging
+from typing import Any, Dict, Tuple
 
 from .color import color
 
@@ -9,6 +10,8 @@ logger.setLevel(logging.INFO)
 
 
 class TargetLoggerAdapter(logging.LoggerAdapter):
-    def process(self, msg, kwargs):
-        target = color.target(f"[{self.extra.get('target', '<none>')}]")
-        return f"{target} {msg}", kwargs
+    def process(
+        self, message: str, kwargs: Dict[str, Any]
+    ) -> Tuple[str, Dict[str, Any]]:
+        prefix = color.target(f"[{self.extra.get('target', '<none>')}]")
+        return f"{prefix} {message}", kwargs
