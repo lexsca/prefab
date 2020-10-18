@@ -11,6 +11,12 @@ options:
   short_digest_size: 12
   target_label: prefab.target
   validate_image: true
+  ignore_files:
+    - "__cache__/"
+    - "*.build/"
+    - "*.kruft"
+    - "watch_files/a/b/exclude.me"
+    - "watch_files/a/.git/"
 
 targets:
   a:
@@ -20,6 +26,7 @@ targets:
       - c
     watch_files:
       - prefab.yml
+      - watch_files/a
     build_options:
       labels:
         fixture: "true"

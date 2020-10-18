@@ -118,6 +118,10 @@ class Config(ConfigBase):
         return self.get_option("hash_chunk_size", C.DEFAULT_HASH_CHUNK_SIZE)
 
     @property
+    def ignore_files(self) -> List[str]:
+        return self.get_option("ignore_files", C.DEFAULT_IGNORE_FILES)
+
+    @property
     def prune_after_build(self) -> bool:
         return self.get_option("prune_after_build", C.DEFAULT_PRUNE_AFTER_BUILD)
 

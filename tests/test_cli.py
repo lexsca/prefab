@@ -27,8 +27,8 @@ def test_dry_run(caplog, monkeypatch, prefab_yaml_path, chdir_fixtures):
         main()
 
     target_digest_log_message = (
-        "[a] target_digest sha256:ede6e265a9d5b9c90b27"
-        "c614317bd8d26ff2818390bc3d44479f07a6f6587a7f"
+        "[a] target_digest sha256:d5855c469d29ac09b098"
+        "ee7254bb5ea2bb8dfe22b5eb88b39bdc75808e6bb305"
     )
 
     assert system_exit.value.code == 0

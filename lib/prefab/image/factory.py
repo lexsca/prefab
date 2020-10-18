@@ -1,11 +1,14 @@
 import functools
 import hashlib
-from typing import Any, Callable, Dict
+import os
+import stat
+from typing import Any, Callable, Dict, List
 
 from .. import constants as C
 from .. import errors as E
 from ..config import Config
 from ..logger import logger, TargetLoggerAdapter
+from ..walk import walk
 from .docker import DockerImage
 
 
@@ -53,6 +56,18 @@ class ImageFactory:
 
         return hasher.hexdigest()
 
+    def _get_target_watch_files(self, target: str) -> List[str]:
+        target_config = self.config.get_target(target)
+        watch_files = [target_config.get("dockerfile")]
+
+        for path in target_config["watch_files"]:
+            if stat.S_ISDIR(os.stat(path).st_mode):
+                watch_files.extend(walk(path, self.config.ignore_files))
+            else:
+                watch_files.append(path)
+
+        return watch_files
+
     def _get_target_digest(self, target: str) -> str:
         hasher = self.get_hasher()
         target_logger = self.get_target_logger(target)
@@ -60,7 +75,7 @@ class ImageFactory:
 
         hasher.update(target.encode())
 
-        for path in [target_config.get("dockerfile")] + target_config["watch_files"]:
+        for path in self._get_target_watch_files(target):
             digest = self.get_file_digest(path)
             hasher.update(digest.encode())
             target_logger.info(f"file_digest {path} {hasher.name}:{digest}")
