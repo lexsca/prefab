@@ -117,7 +117,7 @@ class ImageFactory:
         buildargs = {}
 
         for dependency in self.config.get_target(target)["depends_on"]:
-            arg = f"{self.config.buildarg_prefix}{dependency}"
+            arg = f"{self.config.buildarg_prefix}{dependency}".upper().replace("-", "_")
             value = f"{self.repo}:{self.get_target_tag(dependency)}"
             buildargs[arg] = value
 

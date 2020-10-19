@@ -60,14 +60,17 @@ def filter_files(
 
 
 def walk(path: str, ignore_patterns: List[str]) -> List[str]:
-    files = []
+    file_paths = []
+    norm_path = os.path.normpath(path)
     dir_ignore_patterns, file_ignore_patterns = parse_ignore_patterns(ignore_patterns)
 
     def onerror(error):
         raise error
 
-    for base_dir, dir_names, file_names in os.walk(path, topdown=True, onerror=onerror):
+    for base_dir, dir_names, file_names in os.walk(
+        norm_path, topdown=True, onerror=onerror
+    ):
         cull_dirs(base_dir, dir_names, file_names, dir_ignore_patterns)
-        files.extend(filter_files(base_dir, file_names, file_ignore_patterns))
+        file_paths.extend(filter_files(base_dir, file_names, file_ignore_patterns))
 
-    return sorted(files)
+    return sorted(file_paths)
