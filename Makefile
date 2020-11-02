@@ -1,5 +1,7 @@
-.PHONY: clean build install-requirements refesh-requirements format lint \
-		test version publish push-image upload-pypi push-release-tag
+.PHONY: bootstrap build cache-clean cache-push clean docker-clean format \
+		git-tag-push image-push lint publish push-image push-release-tag \
+		pypi-upload refesh-requirements release shell spotless test \
+		upload-pypi version
 
 IMAGE_REPO ?= quay.io/lexsca/prefab
 VERSION ?= $(shell TZ=UTC git log -1 --format='%cd' \
@@ -15,60 +17,27 @@ help:
 
 clean:
 	rm -fr lib/*.egg-info dist build .pytest_cache $(VERSION_PY) \
-		image/*.whl image/requirements.txt image/current-wheel .coverage
+		.coverage *.spec docs/_build/* docs/_build/.??*
 	find . -type d -name __pycache__ -exec /bin/rm -fr {} +
 	find . -depth -type f -name '*.pyc' -exec /bin/rm -fr {} +
-	$(MAKE) -C docs clean
 
 docker-clean:
 	docker system prune -af
 	docker volume prune -f
 
-version:
-	echo '__version__ = "$(VERSION)"' > $(VERSION_PY)
+spotless: clean docker-clean
 
-build: clean version
-	python setup.py sdist bdist_wheel
-	cp dist/container_prefab-$(VERSION)-py3-none-any.whl image
-	ln -fs container_prefab-$(VERSION)-py3-none-any.whl image/current-wheel
-	cp requirements.txt image
-	cd image && PYTHONPATH=../lib ../bin/container-prefab -r $(IMAGE_REPO) \
-		-t app:$(VERSION)
-	docker tag $(IMAGE_REPO):$(VERSION) $(IMAGE_REPO):latest
+bootstrap:
+	docker build -t $(IMAGE_REPO):bootstrap -f Dockerfile.tools .
+	docker run --rm -it -v $(shell /bin/pwd):/build -w /build \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		--entrypoint /bootstrap.sh $(IMAGE_REPO):bootstrap \
+		-r $(IMAGE_REPO) -t dev:dev
 
-ouroboros:
-	docker run --rm -v $(shell /bin/pwd)/image:/build -w /build \
-		-v $(HOME)/.docker/config.json:/authfile --privileged \
-		quay.io/lexsca/prefab -r quay.io/lexsca/prefab -t app:$(VERSION)
-
-push-image:
-	cd image && PYTHONPATH=../lib ../bin/container-prefab -r $(IMAGE_REPO) \
-		-t app:$(VERSION) -p
-	docker push $(IMAGE_REPO):latest
-
-upload-pypi:
-	twine upload dist/*
-
-push-release-tag:
-	git tag $(RELEASE_TAG) HEAD
-	git push origin $(RELEASE_TAG)
-
-publish: test build upload-pypi push-image push-release-tag
-
-requirements.txt: requirements.in
-	pip-compile -v requirements.in
-
-requirements-dev.txt: requirements-dev.in
-	pip-compile -v requirements-dev.in
-
-install-requirements: requirements.txt requirements-dev.txt
-	pip install -U pip
-	pip install -U -r requirements.txt
-	pip install -U -r requirements-dev.txt
-
-refesh-requirements:
-	rm -f requirements.txt requirements-dev.txt
-	$(MAKE) install-requirements
+shell:
+	docker run --rm -it -v $(shell /bin/pwd):/prefab -w /prefab \
+		-v /var/run/docker.sock:/docker.sock -e PYTHONPATH=lib \
+		--entrypoint /bin/bash $(IMAGE_REPO):dev --login -o vi
 
 format:
 	black .
@@ -80,4 +49,67 @@ lint:
 	mypy --ignore-missing-imports --cache-dir=/dev/null .
 
 test: clean lint
-	pytest --random-order --cov=lib --cov-report=term-missing tests
+	pytest -v --random-order --cov=lib --cov-report=term-missing tests
+
+version:
+	echo '__version__ = "$(VERSION)"' > $(VERSION_PY)
+
+build:
+	bin/container-prefab -r $(IMAGE_REPO) -t dist:dist-$(VERSION) \
+		dind:dind-$(VERSION) dood:dood-$(VERSION)
+
+release: version
+	docker run --rm -it -v $(shell /bin/pwd):/prefab -w /prefab \
+		-v /var/run/docker.sock:/docker.sock -e PYTHONPATH=lib \
+		--entrypoint /bin/sh $(IMAGE_REPO):dev -c 'make test version build'
+
+smoke-test:
+	# build prefab with prefab dind and dood artifacts
+	$(MAKE) cache-clean
+	docker run --rm -it -v $(shell /bin/pwd):/build -w /build \
+		-v /var/run/docker.sock:/docker.sock $(IMAGE_REPO):dood-$(VERSION) \
+		-r $(IMAGE_REPO) -t dist dood
+	docker run --rm -it -v $(shell /bin/pwd):/build -w /build --privileged \
+		$(IMAGE_REPO):dind-$(VERSION) -r $(IMAGE_REPO) -t dist dood
+
+cache-clean: IMAGES = $(shell \
+	docker images --format '{{.Repository}}:{{.Tag}}' ${IMAGE_REPO} | \
+	awk -F: '$$2 ~ /^[0-9a-f]{12}$$/')
+cache-clean:
+	$(foreach image,$(IMAGES),docker rmi $(image);)
+	docker image prune -f
+
+cache-push:
+	docker run --rm -it -v $(shell /bin/pwd):/build -w /build \
+		-v $(HOME)/.docker/config.json:/auth.json \
+		-v /var/run/docker.sock:/docker.sock -e PYTHONPATH=lib \
+		$(IMAGE_REPO):dev bin/container-prefab -r $(IMAGE_REPO) \
+		-t tools wheels dev-wheels -p tools wheels dev-wheels
+
+image-push:
+	docker tag $(IMAGE_REPO):dind-$(VERSION) $(IMAGE_REPO):dind
+	docker tag $(IMAGE_REPO):dood-$(VERSION) $(IMAGE_REPO):dood
+	docker push $(IMAGE_REPO):dind-$(VERSION)
+	docker push $(IMAGE_REPO):dood-$(VERSION)
+	docker push $(IMAGE_REPO):dind
+	docker push $(IMAGE_REPO):dood
+
+pypi-upload:
+	docker run --rm -it -e TWINE_PASSWORD=$(TWINE_PASSWORD) \
+		$(IMAGE_REPO):dist-$(VERSION)
+
+git-tag-push:
+	git tag $(RELEASE_TAG) HEAD
+	git push origin $(RELEASE_TAG)
+
+publish: image-push pypi-upload git-tag-push
+
+requirements.txt: requirements.in
+	pip-compile -v requirements.in
+
+requirements-dev.txt: requirements-dev.in
+	pip-compile -v requirements-dev.in
+
+refesh-requirements:
+	rm -f requirements.txt requirements-dev.txt
+	$(MAKE) requirements.txt requirements-dev.txt 

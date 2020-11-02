@@ -1,0 +1,41 @@
+#!/bin/sh
+
+if [ $(id -u) != 0 ]
+then
+    echo "This container must be run as root"
+    exit 1
+fi
+if ! ip link add dummy0 type dummy
+then
+    echo "This container must be run in privileged mode"
+    exit 1
+else
+    ip link del dummy0
+fi
+
+printf "\nDocker starting ... "
+dockerd-entrypoint.sh dockerd > /var/log/dockerd.log 2>&1 &
+
+success=0
+tries=0
+
+while [ $tries -lt 10 ]
+do
+    if docker ps > /dev/null 2>&1
+    then
+        success=1
+        break
+    fi
+    sleep 1
+done
+
+if [ $success == 0 ]
+then
+    printf "\nDocker failed to start:\n"
+    cat /var/log/dockerd.log
+    exit 1
+else
+    printf "success! 🐳\n"
+fi
+
+exec container-prefab $@

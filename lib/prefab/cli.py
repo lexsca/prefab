@@ -25,7 +25,7 @@ def _arg_parser() -> argparse.ArgumentParser:
         action="store",
         metavar="PATH",
         default=C.DEFAULT_CONFIG_FILE,
-        help="Target build config file to use",
+        help="Target build config file to use (default: %(default)s)",
     )
     parser.add_argument(
         "--dry-run",
@@ -37,7 +37,7 @@ def _arg_parser() -> argparse.ArgumentParser:
         "--force",
         dest="force",
         action="store_true",
-        help="Force targets to be rebuilt",
+        help="Force target(s) to be rebuilt",
     )
     parser.add_argument(
         "--monochrome",
@@ -49,8 +49,9 @@ def _arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--push",
         "-p",
-        action="store_true",
-        help="Push images to repo after building",
+        nargs="+",
+        metavar="TARGET_NAME",
+        help="Image target(s) to push to repo after building",
     )
     parser.add_argument(
         "--repo",
@@ -65,9 +66,9 @@ def _arg_parser() -> argparse.ArgumentParser:
         "--target",
         "-t",
         dest="_targets",
-        action="append",
+        nargs="+",
         required=True,
-        metavar="NAME[:TAG]",
+        metavar="TARGET_NAME[:TAG]",
         help="Image target(s) to build with optional custom image tag",
     )
 
@@ -141,7 +142,7 @@ def cli(args: List[str]) -> None:
 
     if options.push:
         push_start_time = time.monotonic()
-        image_graph.push()
+        image_graph.push(options.push)
         logger.info(
             f"\n{color.elapsed('Push elapsed time: ')} {elapsed_time(push_start_time)}"
         )

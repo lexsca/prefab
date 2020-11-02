@@ -44,7 +44,7 @@ class ConfigBase(collections.UserDict):
         config = self.data["targets"][target]
 
         if not isinstance(config, dict):
-            raise E.InvalidConfigError(f"{target}: dict expected for target config")
+            raise E.InvalidConfigError(f"{target}: dict expected")
 
         if "dockerfile" not in config or not isinstance(config["dockerfile"], str):
             raise E.InvalidConfigError(
@@ -55,17 +55,13 @@ class ConfigBase(collections.UserDict):
 
     def validate_target_config(self, target: str, config: Dict[str, Any]) -> None:
         if not isinstance(config.get("depends_on", []), list):
-            raise E.InvalidConfigError(f"{target}: list expected for target depends_on")
+            raise E.InvalidConfigError(f"{target}: list expected for depends_on")
 
         if not isinstance(config.get("watch_files", []), list):
-            raise E.InvalidConfigError(
-                f"{target}: list expected for target watch_files"
-            )
+            raise E.InvalidConfigError(f"{target}: list expected for watch_files")
 
         if not isinstance(config.get("build_options", {}), dict):
-            raise E.InvalidConfigError(
-                f"{target}: dict expected for target build_options"
-            )
+            raise E.InvalidConfigError(f"{target}: dict expected for build_options")
 
 
 class Config(ConfigBase):

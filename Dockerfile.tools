@@ -1,0 +1,8 @@
+FROM python:3.7.9-alpine3.12
+
+RUN apk -U add alpine-sdk zlib-dev libffi-dev openssl-dev && \
+    pip3 install -U wheel pip pip-tools && \
+    printf '#!/bin/sh\n' >> /bootstrap.sh && \
+    printf 'python3 setup.py develop\n' >> /bootstrap.sh && \
+    printf 'exec container-prefab $@\n' >> /bootstrap.sh && \
+    chmod 755 /bootstrap.sh

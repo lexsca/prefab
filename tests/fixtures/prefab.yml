@@ -7,7 +7,7 @@ options:
   digest_label: prefab.digest
   hash_algorithm: sha256
   hash_chunk_size: 65535
-  prune_after_build: true
+  prune_after_build: false
   short_digest_size: 12
   target_label: prefab.target
   validate_image: true

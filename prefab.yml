@@ -1,28 +1,49 @@
 options:
-  # https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit
-  color_style:
-    header: 208
-    target: 8
-    image: 6
-    elapsed: 220
-    error: 124
-    config: 98
+  ignore_files:
+    - "__pycache__"
+    - "*.egg-info"
 
 targets:
-  app:
-    dockerfile: Dockerfile.app
+  dood:
+    dockerfile: Dockerfile.dood
     depends_on:
-      - wheels
-      - base
+      - dist
+
+  dind:
+    dockerfile: Dockerfile.dind
+    depends_on:
+      - dist
+
+  dist:
+    dockerfile: Dockerfile.dist
+    depends_on:
+      - dev
     watch_files:
-      - current-wheel
+      - lib/
+      - bin/
+      - setup.cfg
+      - setup.py
+
+  dev:
+    dockerfile: Dockerfile.dev
+    depends_on:
+      - tools
+      - wheels
+      - dev-wheels
 
   wheels:
     dockerfile: Dockerfile.wheels
     depends_on:
-      - base
+      - tools
     watch_files:
       - requirements.txt
 
-  base:
-    dockerfile: Dockerfile.base
+  dev-wheels:
+    dockerfile: Dockerfile.dev-wheels
+    depends_on:
+      - tools
+    watch_files:
+      - requirements-dev.txt
+
+  tools:
+    dockerfile: Dockerfile.tools

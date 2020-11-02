@@ -68,12 +68,20 @@ class ImageFactory:
 
         return watch_files
 
+    def get_target_salt(self, target: str) -> str:
+        hasher = self.get_hasher()
+        hasher.update(target.encode())
+
+        return hasher.hexdigest()
+
     def _get_target_digest(self, target: str) -> str:
         hasher = self.get_hasher()
         target_logger = self.get_target_logger(target)
         target_config = self.config.get_target(target)
 
-        hasher.update(target.encode())
+        target_salt = self.get_target_salt(target)
+        target_logger.info(f"target_salt {hasher.name}:{target_salt}")
+        hasher.update(target_salt.encode())
 
         for path in self._get_target_watch_files(target):
             digest = self.get_file_digest(path)

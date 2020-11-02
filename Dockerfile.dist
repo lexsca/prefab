@@ -1,0 +1,25 @@
+ARG PREFAB_DEV
+
+FROM $PREFAB_DEV
+
+WORKDIR /build
+
+COPY lib/ lib/
+COPY bin/ bin/
+COPY setup.cfg setup.cfg
+COPY setup.py setup.py
+COPY README.* .
+
+RUN python3 setup.py sdist bdist_wheel && \
+    pip3 install dist/*.whl && \
+    which container-prefab | xargs pyinstaller --onefile
+
+RUN printf '#!/bin/sh\n' >> /entrypoint.sh && \
+    printf 'twine upload dist/*.whl dist/*.tar.gz\n' >> /entrypoint.sh && \
+    chmod 755 /entrypoint.sh
+
+ENV TWINE_REPOSITORY="pypi" \
+    TWINE_USERNAME="__token__" \
+    TWINE_NON_INTERACTIVE="YES"
+
+ENTRYPOINT ["/entrypoint.sh"]

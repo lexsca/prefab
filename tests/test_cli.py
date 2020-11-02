@@ -20,6 +20,9 @@ def test_dry_run(caplog, monkeypatch, prefab_yaml_path, chdir_fixtures):
             "--target",
             "a:a",
             "--push",
+            "c",
+            "b",
+            "a",
         ],
     )
 
@@ -27,8 +30,8 @@ def test_dry_run(caplog, monkeypatch, prefab_yaml_path, chdir_fixtures):
         main()
 
     target_digest_log_message = (
-        "[a] target_digest sha256:d5855c469d29ac09b098"
-        "ee7254bb5ea2bb8dfe22b5eb88b39bdc75808e6bb305"
+        "[a] target_digest sha256:465e3e6c70a73d0e704a"
+        "109fde6b869b06db9a2afd2d0faaf76c174a1d3fd58c"
     )
 
     assert system_exit.value.code == 0
@@ -49,7 +52,6 @@ def test_tag_duplicates_disallowed(monkeypatch, capsys, prefab_yaml_path):
             "quay.io/lexsca/prefab",
             "--target",
             "a:app",
-            "--target",
             "b:app",
         ],
     )

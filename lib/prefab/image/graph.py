@@ -28,7 +28,7 @@ class ImageGraph:
         # use a depth-first search to unroll dependencies and detect loops.
         # targets have a directed dependency stream. if an upstream target
         # dependency changes, downstream dependencies also change, forcing
-        # a new image build.
+        # a new image build. see factory.get_target_digest for details.
         for dependent in self.config.get_target(target).get("depends_on", []):
             vector = (target, dependent)
             if vector in vectors:
@@ -110,10 +110,6 @@ class ImageGraph:
         for line in json_lines:
             image.logger.info(color.config(line))
 
-    def should_build_target_image(self, target: str) -> bool:
-        # image must be built if any upstream dependencies were (re)built
-        return any(image for image in self.targets[target] if image.was_built)
-
     def _build_image(self, image: DockerImage) -> None:
         image.logger.info(f"{color.image(image.name)} Trying build...")
         self.display_image_build_options(image)
@@ -123,13 +119,19 @@ class ImageGraph:
             image.prune()
 
     def build_target_images(self, target: str, force: bool = False) -> None:
+        cache_invalidated = False
+
         for image in self.targets[target]:
-            if force or self.should_build_target_image(target):
+            if force or cache_invalidated:
                 self._build_image(image)
+                cache_invalidated = True
                 continue
 
             if not self.load_target_image(image):
                 self._build_image(image)
+
+            if image.was_built:
+                cache_invalidated = True
 
     def display_build_target(self, target: str) -> None:
         images = dict(map(reversed, self.images.items()))
@@ -160,10 +162,10 @@ class ImageGraph:
             self.display_build_target(target)
             self.build_target_images(target, force)
 
-    def push(self) -> None:
+    def push(self, targets: List[str]) -> None:
         logger.info(color.header("Pushing images"))
 
-        for image in self.images.values():
+        for image in [self.images[target] for target in targets]:
             if image.is_loaded:
                 if image.was_pulled and not image.was_built:
                     image.logger.info(

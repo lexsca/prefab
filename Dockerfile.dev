@@ -1,17 +1,32 @@
-ARG prefab_base
-ARG prefab_wheels
+ARG PREFAB_TOOLS
+ARG PREFAB_WHEELS
+ARG PREFAB_DEV_WHEELS
 
-FROM $prefab_wheels as wheels
-FROM $prefab_base
+FROM $PREFAB_WHEELS as wheels
+FROM $PREFAB_DEV_WHEELS as dev-wheels
+FROM $PREFAB_TOOLS
 
 COPY --from=wheels /wheels /wheels
-COPY *.whl /wheels
+COPY --from=dev-wheels /wheels /wheels
 
 RUN pip3 install /wheels/*.whl && \
-    rm -fr /wheels /usr/lib/python3.8/site-packages/{pip,setuptools} && \
-    find / -type d -name __pycache__ -exec /bin/rm -fr {} + && \
-    find / -depth -type f -name '*.pyc' -exec /bin/rm -fr {} +
+    rm -fr /wheels && \
+    apk -U add git bash bash-completion git-bash-completion && \
+    rm -fr /var/cache/apk/* /root/.cache
 
-COPY entrypoint /entrypoint
+RUN mkdir -p /root/.docker && \
+    echo '{"auths":{}}' > /auth.json && \
+    ln -fs /auth.json /root/.docker/config.json && \
+    touch /docker.sock && \
+    ln -fs /docker.sock /var/run/docker.sock
 
-ENTRYPOINT ["/entrypoint"]
+RUN git clone --single-branch --branch develop \
+        https://github.com/pyinstaller/pyinstaller.git /tmp/pyinstaller && \
+    cd /tmp/pyinstaller/bootloader && \
+    git checkout v3.6 && \
+    python3 ./waf configure --no-lsb all && \
+    pip3 install .. && \
+    rm -fr /tmp/pyinstaller
+
+
+ENTRYPOINT []
