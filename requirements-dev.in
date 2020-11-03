@@ -1,5 +1,6 @@
 bandit
 black
+codecov
 flake8
 mypy
 pip-tools

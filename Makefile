@@ -50,6 +50,7 @@ lint:
 
 test: clean lint
 	pytest -v --random-order --cov=lib --cov-report=term-missing tests
+	codecov -t @.codecov.token
 
 version:
 	echo '__version__ = "$(VERSION)"' > $(VERSION_PY)

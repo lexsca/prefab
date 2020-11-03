@@ -4,9 +4,11 @@ __pycache__
 *.pyc
 *.whl
 .coverage
+coverage.xml
 .*.sw?
 .python-version
 .DS_Store
+.codecov.token
 build/
 dist/
 *.egg-info
