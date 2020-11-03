@@ -50,6 +50,8 @@ lint:
 
 test: clean lint
 	pytest -v --random-order --cov=lib --cov-report=term-missing tests
+
+report-coverage:
 	codecov -t @.codecov.token
 
 version:
@@ -62,7 +64,8 @@ build:
 release: version
 	docker run --rm -it -v $(shell /bin/pwd):/prefab -w /prefab \
 		-v /var/run/docker.sock:/docker.sock -e PYTHONPATH=lib \
-		--entrypoint /bin/sh $(IMAGE_REPO):dev -c 'make test version build'
+		--entrypoint /bin/sh $(IMAGE_REPO):dev \
+		-c 'make test version report-coverage build'
 
 smoke-test:
 	# build prefab with prefab dind and dood artifacts
