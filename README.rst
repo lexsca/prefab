@@ -1,6 +1,6 @@
-#################
-Container Prefab
-#################
+######
+Prefab
+######
 
 Build container images faster ⚡️
 
@@ -13,8 +13,8 @@ Build container images faster ⚡️
 .. image:: https://img.shields.io/pypi/wheel/container-prefab.svg
     :target: https://pypi.org/project/container-prefab/
 
-.. image:: https://readthedocs.org/projects/container-prefab/badge/?version=stable
-    :target: https://container-prefab.readthedocs.io/en/stable/?badge=stable
+.. image:: https://readthedocs.org/projects/prefab/badge/?version=stable
+    :target: https://prefab.readthedocs.io/en/stable/?badge=stable
 
 .. image:: https://codecov.io/gh/lexsca/prefab/branch/main/graph/badge.svg
     :target: https://codecov.io/gh/lexsca/prefab
@@ -25,7 +25,7 @@ Build container images faster ⚡️
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
     :target: https://github.com/psf/black
 
-*Container Prefab* is a build tool that helps reduce the time it takes to create
+*Prefab* is a build tool that helps reduce the time it takes to create
 container images.  It accomplishes this via deterministic builds and remote caching.
 If a container image build takes several minutes to complete, building the same 
-artifacts each time, *Container Prefab* might be able to help!
+artifacts each time, *Prefab* might be able to help!
