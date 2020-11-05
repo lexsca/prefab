@@ -13,7 +13,6 @@ class ImageGraph:
         self.config: Config = config
         self.image_factory: Callable = image_factory
         self.images: Dict[str, DockerImage] = {}
-        self.targets: Dict[str, List[DockerImage]] = {}
 
     def configure_target_image(self, target: str) -> DockerImage:
         if target not in self.images:
@@ -119,44 +118,29 @@ class ImageGraph:
             image.prune()
 
     def build_target_images(self, target: str, force: bool = False) -> None:
-        cache_invalidated = False
+        image = self.images[target]
 
-        for image in self.targets[target]:
-            if force or cache_invalidated:
-                self._build_image(image)
-                cache_invalidated = True
-                continue
-
-            if not self.load_target_image(image):
-                self._build_image(image)
-
-            if image.was_built:
-                cache_invalidated = True
+        if force or not self.load_target_image(image):
+            for dependent in self.config.get_target(target).get("depends_on", []):
+                self.build_target_images(dependent, force)
+            self._build_image(image)
 
     def display_build_target(self, target: str) -> None:
-        images = dict(map(reversed, self.images.items()))
-        targets = [color.target(f"[{images[image]}]") for image in self.targets[target]]
-
-        if len(targets) > 1:
-            build_order = color.header("using build order ")
-            build_order += color.header(", ").join(targets)
-        else:
-            build_order = ""
-
         logger.info(
-            "\n{0} {1} {2} {3}".format(
+            "\n{0} {1} {2}".format(
                 color.header("Building"),
                 color.target(f"[{target}]"),
-                color.header("target"),
-                build_order,
+                color.header("target..."),
             )
         )
 
-    def build(self, targets: List[str], force: bool = False) -> None:
-        logger.info(color.header("\nResolving dependency graph"))
-
+    def resolve_build_targets(self, targets: List[str]) -> None:
+        logger.info(color.header("\nResolving build targets"))
         for target in targets:
-            self.targets[target] = self.resolve_target_images(target)
+            self.resolve_target_images(target)
+
+    def build(self, targets: List[str], force: bool = False) -> None:
+        self.resolve_build_targets(targets)
 
         for target in targets:
             self.display_build_target(target)
