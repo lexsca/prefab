@@ -20,13 +20,4 @@ RUN mkdir -p /root/.docker && \
     touch /docker.sock && \
     ln -fs /docker.sock /var/run/docker.sock
 
-RUN git clone --single-branch --branch develop \
-        https://github.com/pyinstaller/pyinstaller.git /tmp/pyinstaller && \
-    cd /tmp/pyinstaller/bootloader && \
-    git checkout v3.6 && \
-    python3 ./waf configure --no-lsb all && \
-    pip3 install .. && \
-    rm -fr /tmp/pyinstaller
-
-
 ENTRYPOINT []

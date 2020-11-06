@@ -4,5 +4,15 @@ FROM $PREFAB_TOOLS as wheels
 COPY requirements-dev.txt requirements-dev.txt
 RUN pip3 wheel -w /wheels -r requirements-dev.txt
 
+# configure pyinstaller bootloader for alpine linux
+RUN git clone --single-branch --branch develop \
+        https://github.com/pyinstaller/pyinstaller.git /tmp/pyinstaller && \
+    cd /tmp/pyinstaller/bootloader && \
+    git checkout v3.6 && \
+    python3 ./waf configure --no-lsb all && \
+    cd .. && \
+    python setup.py bdist_wheel && \
+    cp dist/*.whl /wheels
+
 FROM scratch
 COPY --from=wheels /wheels /wheels
