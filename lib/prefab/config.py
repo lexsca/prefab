@@ -1,6 +1,6 @@
 import collections
 import json
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from . import errors as E
 from . import constants as C
@@ -11,14 +11,15 @@ import yaml
 
 
 class ConfigBase(collections.UserDict):
-    def __init__(self, config: Dict[str, str]) -> None:
+    def __init__(self, config: Dict[str, str], path: Optional[str] = None) -> None:
         super().__init__(config)
         self.validate_config()
+        self.path: Optional[str] = path
 
     @classmethod
     def from_yaml_filepath(cls, path: str):
         with open(path) as raw_config:
-            return cls(yaml.safe_load(raw_config))
+            return cls(yaml.safe_load(raw_config), path)
 
     def display_options(self) -> None:
         cls = type(self)

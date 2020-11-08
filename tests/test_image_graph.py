@@ -7,7 +7,7 @@ from prefab.image import FakeImage, ImageFactory, ImageGraph
 
 
 def create_graph(targets):
-    config = Config({"targets": targets})
+    config = Config({"targets": targets}, "prefab.yaml")
     image_factory = ImageFactory(
         config, "repo", tags=dict(), image_constructor=FakeImage
     )
@@ -292,3 +292,51 @@ def test_target_b_image_pull_stops_tree_traversal(caplog, abc_graph):
         "[a] repo:33cb9338a826 Trying build...",
     ]
     assert caplog.messages[-1] == "[a] repo:33cb9338a826 Build succeeded"
+
+
+def test_missing_depends_on_outputs_help_message(caplog, a_graph):
+    a_graph.images = {
+        "a": FakeImage(
+            "repo",
+            "tag",
+            build_options={
+                "buildargs": {},
+                "dockerfile": "Dockerfile.a",
+            },
+            loaded=False,
+            pull=E.ImageNotFoundError,
+            build=E.ImageBuildError("base name ($PREFAB_BASE) should not be blank"),
+        )
+    }
+    with pytest.raises(E.ImageBuildError):
+        a_graph.build(["a"])
+
+    assert caplog.messages[-1] == (
+        'Check "prefab.yaml" and verify all depends_on lists are accurate '
+        "and indented correctly to mitigate this error:"
+    )
+
+
+def test_malformed_dockerfile_arg_outputs_help_message(caplog, a_graph):
+    a_graph.images = {
+        "a": FakeImage(
+            "repo",
+            "tag",
+            build_options={
+                "buildargs": {
+                    "PREFAB_BASE": "quay.io/lexsca/prefab:base",
+                },
+                "dockerfile": "Dockerfile.a",
+            },
+            loaded=False,
+            pull=E.ImageNotFoundError,
+            build=E.ImageBuildError("base name ($PREFAB_BASE) should not be blank"),
+        )
+    }
+    with pytest.raises(E.ImageBuildError):
+        a_graph.build(["a"])
+
+    assert caplog.messages[-1] == (
+        'Check "Dockerfile.a" and verify *all* ARG statements used in FROM statements '
+        "are present and appear before *any* FROM statements to mitigate this error:"
+    )
