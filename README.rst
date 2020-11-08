@@ -16,8 +16,8 @@ Build container images faster ⚡️
 .. image:: https://readthedocs.org/projects/prefab/badge/?version=stable
     :target: https://prefab.readthedocs.io/en/stable/?badge=stable
 
-.. image:: https://codecov.io/gh/lexsca/prefab/branch/main/graph/badge.svg
-    :target: https://codecov.io/gh/lexsca/prefab
+.. image:: https://coveralls.io/repos/github/lexsca/prefab/badge.svg?branch=main
+    :target: https://coveralls.io/github/lexsca/prefab?branch=main
 
 .. image:: https://img.shields.io/github/license/lexsca/prefab.svg
     :target: https://github.com/lexsca/prefab/blob/master/LICENSE

@@ -52,7 +52,7 @@ test: clean lint
 	pytest -v --random-order --cov=lib --cov-report=term-missing tests
 
 report-coverage:
-	codecov -t @.codecov.token
+	coveralls
 
 version:
 	echo '__version__ = "$(VERSION)"' > $(VERSION_PY)
@@ -63,8 +63,7 @@ build:
 
 release: version
 	docker run --rm -it -v $(shell /bin/pwd):/prefab -w /prefab \
-		-v /var/run/docker.sock:/docker.sock \
-		-e PYTHONPATH=lib -e CODECOV_TOKEN=$(CODECOV_TOKEN) \
+		-v /var/run/docker.sock:/docker.sock -e PYTHONPATH=lib \
 		--entrypoint /bin/sh $(IMAGE_REPO):dev \
 		-c 'make test version report-coverage build'
 

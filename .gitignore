@@ -8,7 +8,7 @@ coverage.xml
 .*.sw?
 .python-version
 .DS_Store
-.codecov.token
+.coveralls.yml
 build/
 dist/
 *.egg-info
