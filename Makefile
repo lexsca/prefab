@@ -63,7 +63,8 @@ build:
 
 release: version
 	docker run --rm -it -v $(shell /bin/pwd):/prefab -w /prefab \
-		-v /var/run/docker.sock:/docker.sock -e PYTHONPATH=lib \
+		-v /var/run/docker.sock:/docker.sock \
+		-e PYTHONPATH=lib -e CODECOV_TOKEN=$(CODECOV_TOKEN) \
 		--entrypoint /bin/sh $(IMAGE_REPO):dev \
 		-c 'make test version report-coverage build'
 
