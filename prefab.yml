@@ -2,8 +2,15 @@ options:
   ignore_files:
     - "__pycache__"
     - "*.egg-info"
+    - "*.swp"
 
 targets:
+  pypi:
+    dockerfile: Dockerfile.pypi
+    depends_on:
+      - dist
+      - dev-wheels
+
   dood:
     dockerfile: Dockerfile.dood
     depends_on:

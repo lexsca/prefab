@@ -1,0 +1,25 @@
+ARG PREFAB_DIST
+ARG PREFAB_DEV_WHEELS
+
+FROM $PREFAB_DIST as dist
+FROM $PREFAB_DEV_WHEELS as dev-wheels
+FROM python:3.7.9-alpine3.12
+
+COPY --from=dev-wheels /wheels /wheels
+
+RUN pip3 install --no-index --find-links=/wheels twine && \
+    mkdir -p /dist && \
+    rm -fr /wheels
+
+COPY --from=dist /*.whl /dist
+COPY --from=dist /*.tar.gz /dist
+
+RUN printf '#!/bin/sh\n' >> /entrypoint.sh && \
+    printf 'twine upload dist/*\n' >> /entrypoint.sh && \
+    chmod 755 /entrypoint.sh
+
+ENV TWINE_REPOSITORY="pypi" \
+    TWINE_USERNAME="__token__" \
+    TWINE_NON_INTERACTIVE="YES"
+
+ENTRYPOINT ["/entrypoint.sh"]

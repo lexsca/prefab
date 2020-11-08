@@ -1,6 +1,6 @@
 ARG PREFAB_DEV
 
-FROM $PREFAB_DEV
+FROM $PREFAB_DEV as dev
 
 WORKDIR /build
 
@@ -14,12 +14,6 @@ RUN python3 setup.py sdist bdist_wheel && \
     pip3 install dist/*.whl && \
     which container-prefab | xargs pyinstaller --onefile
 
-RUN printf '#!/bin/sh\n' >> /entrypoint.sh && \
-    printf 'twine upload dist/*.whl dist/*.tar.gz\n' >> /entrypoint.sh && \
-    chmod 755 /entrypoint.sh
+FROM scratch
 
-ENV TWINE_REPOSITORY="pypi" \
-    TWINE_USERNAME="__token__" \
-    TWINE_NON_INTERACTIVE="YES"
-
-ENTRYPOINT ["/entrypoint.sh"]
+COPY --from=dev /build/dist/* /

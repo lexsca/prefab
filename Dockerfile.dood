@@ -9,6 +9,6 @@ RUN mkdir -p /root/.docker && \
     touch /docker.sock && \
     ln -fs /docker.sock /var/run/docker.sock
 
-COPY --from=dist /build/dist/container-prefab /container-prefab
+COPY --from=dist /container-prefab /container-prefab
 
 ENTRYPOINT ["/container-prefab"]

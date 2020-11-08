@@ -58,7 +58,7 @@ version:
 	echo '__version__ = "$(VERSION)"' > $(VERSION_PY)
 
 build:
-	bin/container-prefab -r $(IMAGE_REPO) -t dist:dist-$(VERSION) \
+	bin/container-prefab -r $(IMAGE_REPO) -t pypi:pypi-$(VERSION) \
 		dind:dind-$(VERSION) dood:dood-$(VERSION)
 
 release: version
@@ -68,13 +68,13 @@ release: version
 		-c 'make test version report-coverage build'
 
 smoke-test:
-	# build prefab with prefab dind and dood artifacts
+	# build prefab from prefab dind and dood artifacts
 	$(MAKE) cache-clean
 	docker run --rm -it -v $(shell /bin/pwd):/build -w /build \
 		-v /var/run/docker.sock:/docker.sock $(IMAGE_REPO):dood-$(VERSION) \
-		-r $(IMAGE_REPO) -t dist dood
+		-r $(IMAGE_REPO) -t dind dood pypi
 	docker run --rm -it -v $(shell /bin/pwd):/build -w /build --privileged \
-		$(IMAGE_REPO):dind-$(VERSION) -r $(IMAGE_REPO) -t dist dood
+		$(IMAGE_REPO):dind-$(VERSION) -r $(IMAGE_REPO) -t dind dood pypi
 
 cache-clean: IMAGES = $(shell \
 	docker images --format '{{.Repository}}:{{.Tag}}' ${IMAGE_REPO} | \
@@ -88,7 +88,7 @@ cache-push:
 		-v $(HOME)/.docker/config.json:/auth.json \
 		-v /var/run/docker.sock:/docker.sock -e PYTHONPATH=lib \
 		$(IMAGE_REPO):dev bin/container-prefab -r $(IMAGE_REPO) \
-		-t tools wheels dev-wheels -p tools wheels dev-wheels
+		-t dist -p tools wheels dev-wheels dist
 
 image-push:
 	docker tag $(IMAGE_REPO):dind-$(VERSION) $(IMAGE_REPO):dind
@@ -100,7 +100,7 @@ image-push:
 
 pypi-upload:
 	docker run --rm -it -e TWINE_PASSWORD=$(TWINE_PASSWORD) \
-		$(IMAGE_REPO):dist-$(VERSION)
+		$(IMAGE_REPO):pypi-$(VERSION)
 
 git-tag-push:
 	git tag $(RELEASE_TAG) HEAD
