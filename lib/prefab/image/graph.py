@@ -1,5 +1,4 @@
 import json
-import re
 from typing import Any, Callable, Dict, List, Tuple
 
 from .. import errors as E
@@ -107,33 +106,10 @@ class ImageGraph:
         for line in json_lines:
             image.logger.info(color.config(line))
 
-    def _build_error_helper(self, image: DockerImage, error: Exception) -> None:
-        match = re.search(r"name \(\$([A-Z_]+)\) should not be blank", str(error))
-        message = None
-
-        if match and match.group(1) not in image.build_options["buildargs"]:
-            message = (
-                f'Check "{self.config.path}" and verify all depends_on lists are '
-                "accurate and indented correctly to mitigate this error:"
-            )
-        elif match:
-            message = (
-                f"Check \"{image.build_options['dockerfile']}\" and verify *all* ARG "
-                "statements used in FROM statements are present and appear before *any* "
-                "FROM statements to mitigate this error:"
-            )
-
-        if message:
-            image.logger.warning(color.warning(message))
-
     def _build_image(self, image: DockerImage) -> None:
         image.logger.info(f"{color.image(image.name)} Trying build...")
         self.display_image_build_options(image)
-        try:
-            image.build()
-        except E.ImageBuildError as error:
-            self._build_error_helper(image, error)
-            raise
+        image.build()
 
         if self.config.prune_after_build:
             image.prune()

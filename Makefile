@@ -1,7 +1,7 @@
 .PHONY: bootstrap build cache-clean cache-push clean docker-clean format \
 		git-tag-push image-push lint publish push-image push-release-tag \
 		pypi-upload refesh-requirements release shell spotless test \
-		upload-pypi version
+		report-coverage upload-pypi version
 
 IMAGE_REPO ?= quay.io/lexsca/prefab
 VERSION ?= $(shell TZ=UTC git log -1 --format='%cd' \
@@ -51,9 +51,6 @@ lint:
 test: clean lint
 	pytest -v --random-order --cov=lib --cov-report=term-missing tests
 
-report-coverage:
-	coveralls
-
 version:
 	echo '__version__ = "$(VERSION)"' > $(VERSION_PY)
 
@@ -64,8 +61,7 @@ build:
 release: version
 	docker run --rm -it -v $(shell /bin/pwd):/prefab -w /prefab \
 		-v /var/run/docker.sock:/docker.sock -e PYTHONPATH=lib \
-		--entrypoint /bin/sh $(IMAGE_REPO):dev \
-		-c 'make test version report-coverage build'
+		$(IMAGE_REPO):dev make test version build
 
 smoke-test:
 	# build prefab from prefab dind and dood artifacts
@@ -102,11 +98,15 @@ pypi-upload:
 	docker run --rm -it -e TWINE_PASSWORD=$(TWINE_PASSWORD) \
 		$(IMAGE_REPO):pypi-$(VERSION)
 
+report-coverage:
+	docker run --rm -it -v $(shell /bin/pwd):/prefab -w /prefab \
+		-v /var/run/docker.sock:/docker.sock $(IMAGE_REPO):dev coveralls
+
 git-tag-push:
 	git tag $(RELEASE_TAG) HEAD
 	git push origin $(RELEASE_TAG)
 
-publish: image-push pypi-upload git-tag-push
+publish: image-push pypi-upload report-coverage git-tag-push
 
 requirements.txt: requirements.in
 	pip-compile -v requirements.in
