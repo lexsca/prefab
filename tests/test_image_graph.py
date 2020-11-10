@@ -57,9 +57,8 @@ def resolve_graph(targets, target):
     )
     image_factory.digests = {target: target for target in targets}
     image_graph = ImageGraph(config, image_factory)
-    images = image_graph.resolve_target_images(target)
 
-    return [image.tag for image in images]
+    return image_graph.resolve_target_dependencies(target)
 
 
 def test_single_target():
@@ -256,7 +255,7 @@ def test_target_image_pull_stops_tree_traversal(caplog, abc_graph):
     abc_graph.build(["a"])
 
     assert caplog.messages[-4:] == [
-        "\nBuilding [a] target...",
+        "\nBuilding [a] target with dependencies: [b], [c]",
         "[a] repo:33cb9338a826 Image not loaded",
         "[a] repo:33cb9338a826 Trying pull...",
         "[a] repo:33cb9338a826 Image validated",
@@ -267,7 +266,7 @@ def test_target_a_image_pull_stops_tree_traversal(caplog, abc_graph):
     abc_graph.build(["a"])
 
     assert caplog.messages[-4:] == [
-        "\nBuilding [a] target...",
+        "\nBuilding [a] target with dependencies: [b], [c]",
         "[a] repo:33cb9338a826 Image not loaded",
         "[a] repo:33cb9338a826 Trying pull...",
         "[a] repo:33cb9338a826 Image validated",
@@ -280,7 +279,7 @@ def test_target_b_image_pull_stops_tree_traversal(caplog, abc_graph):
     abc_graph.build(["a"])
 
     assert caplog.messages[-25:-21] == [
-        "\nBuilding [a] target...",
+        "\nBuilding [a] target with dependencies: [b], [c]",
         "[a] repo:33cb9338a826 Image not loaded",
         "[a] repo:33cb9338a826 Trying pull...",
         "[a] repo:33cb9338a826 ImageNotFoundError: ",

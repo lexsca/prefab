@@ -14,16 +14,14 @@ class ImageGraph:
         self.image_factory: Callable = image_factory
         self.images: Dict[str, DockerImage] = {}
 
-    def configure_target_image(self, target: str) -> DockerImage:
+    def configure_target_image(self, target: str) -> None:
         if target not in self.images:
             image = self.images[target] = self.image_factory(target)
             image.logger.info(f"target_image {color.image(image.name)}")
 
-        return self.images[target]
-
-    def _resolve_target_images(
-        self, target: str, images: List[DockerImage], vectors: List[Tuple[str, str]]
-    ) -> List[DockerImage]:
+    def _resolve_target_dependencies(
+        self, target: str, dependencies: List[str], vectors: List[Tuple[str, str]]
+    ) -> List[str]:
         # use a depth-first search to unroll dependencies and detect loops
         for dependent in self.config.get_target(target).get("depends_on", []):
             vector = (target, dependent)
@@ -33,17 +31,19 @@ class ImageGraph:
                 )
             else:
                 vectors.append(vector)
-                self._resolve_target_images(dependent, images, vectors)
+                self._resolve_target_dependencies(dependent, dependencies, vectors)
                 vectors.pop()
 
-        image = self.configure_target_image(target)
-        if image not in images:
-            images.append(image)
+        self.configure_target_image(target)
+        if target not in dependencies:
+            dependencies.append(target)
 
-        return images
+        return dependencies
 
-    def resolve_target_images(self, target: str) -> List[DockerImage]:
-        return self._resolve_target_images(target=target, images=[], vectors=[])
+    def resolve_target_dependencies(self, target: str) -> List[DockerImage]:
+        return self._resolve_target_dependencies(
+            target=target, dependencies=[], vectors=[]
+        )
 
     @property
     def allowed_pull_errors(self) -> Tuple[Any, ...]:
@@ -123,18 +123,29 @@ class ImageGraph:
             self._build_image(image)
 
     def display_build_target(self, target: str) -> None:
+        targets = self.resolve_target_dependencies(target)
+
+        if len(targets) > 1:
+            dependencies = color.header(" with dependencies: ")
+            dependencies += color.header(", ").join(
+                [color.target(f"[{target}]") for target in targets[-2::-1]]
+            )
+        else:
+            dependencies = ""
+
         logger.info(
-            "\n{0} {1} {2}".format(
+            "\n{0} {1} {2}{3}".format(
                 color.header("Building"),
                 color.target(f"[{target}]"),
-                color.header("target..."),
+                color.header("target"),
+                dependencies,
             )
         )
 
     def resolve_build_targets(self, targets: List[str]) -> None:
         logger.info(color.header("\nResolving build targets"))
         for target in targets:
-            self.resolve_target_images(target)
+            self.resolve_target_dependencies(target)
 
     def build(self, targets: List[str], force: bool = False) -> None:
         self.resolve_build_targets(targets)
