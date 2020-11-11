@@ -32,7 +32,7 @@ bootstrap:
 	docker run --rm -it -v $(shell /bin/pwd):/build -w /build \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		--entrypoint /bootstrap.sh $(IMAGE_REPO):bootstrap \
-		-r $(IMAGE_REPO) -t dev:dev
+		-c image/prefab.yaml -r $(IMAGE_REPO) -t dev:dev
 
 shell:
 	docker run --rm -it -v $(shell /bin/pwd):/prefab -w /prefab \
@@ -55,8 +55,8 @@ version:
 	echo '__version__ = "$(VERSION)"' > $(VERSION_PY)
 
 build:
-	bin/container-prefab -r $(IMAGE_REPO) -t pypi:pypi-$(VERSION) \
-		dind:dind-$(VERSION) dood:dood-$(VERSION)
+	bin/container-prefab -c image/prefab.yaml -r $(IMAGE_REPO) \
+		-t pypi:pypi-$(VERSION)  dind:dind-$(VERSION) dood:dood-$(VERSION)
 
 release: version
 	docker run --rm -it -v $(shell /bin/pwd):/prefab -w /prefab \
@@ -68,9 +68,10 @@ smoke-test:
 	$(MAKE) cache-clean
 	docker run --rm -it -v $(shell /bin/pwd):/build -w /build \
 		-v /var/run/docker.sock:/docker.sock $(IMAGE_REPO):dood-$(VERSION) \
-		-r $(IMAGE_REPO) -t dind dood pypi
+		-c image/prefab.yaml -r $(IMAGE_REPO) -t dind dood pypi
 	docker run --rm -it -v $(shell /bin/pwd):/build -w /build --privileged \
-		$(IMAGE_REPO):dind-$(VERSION) -r $(IMAGE_REPO) -t dind dood pypi
+		$(IMAGE_REPO):dind-$(VERSION) -c image/prefab.yaml \
+		-r $(IMAGE_REPO) -t dind dood pypi
 
 cache-clean: IMAGES = $(shell \
 	docker images --format '{{.Repository}}:{{.Tag}}' ${IMAGE_REPO} | \
@@ -83,8 +84,8 @@ cache-push:
 	docker run --rm -it -v $(shell /bin/pwd):/build -w /build \
 		-v $(HOME)/.docker/config.json:/auth.json \
 		-v /var/run/docker.sock:/docker.sock -e PYTHONPATH=lib \
-		$(IMAGE_REPO):dev bin/container-prefab -r $(IMAGE_REPO) \
-		-t dist -p tools wheels dev-wheels dist
+		$(IMAGE_REPO):dev bin/container-prefab -c image/prefab.yaml \
+		-r $(IMAGE_REPO) -t dist -p tools wheels dev-wheels dist
 
 image-push:
 	docker tag $(IMAGE_REPO):dind-$(VERSION) $(IMAGE_REPO):dind
@@ -116,4 +117,4 @@ requirements-dev.txt: requirements-dev.in
 
 refesh-requirements:
 	rm -f requirements.txt requirements-dev.txt
-	$(MAKE) requirements.txt requirements-dev.txt 
+	$(MAKE) requirements.txt requirements-dev.txt
