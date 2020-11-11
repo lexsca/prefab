@@ -6,23 +6,23 @@ options:
 
 targets:
   pypi:
-    dockerfile: Dockerfile.pypi
+    dockerfile: image/Dockerfile.pypi
     depends_on:
       - dist
       - dev-wheels
 
   dood:
-    dockerfile: Dockerfile.dood
+    dockerfile: image/Dockerfile.dood
     depends_on:
       - dist
 
   dind:
-    dockerfile: Dockerfile.dind
+    dockerfile: image/Dockerfile.dind
     depends_on:
       - dist
 
   dist:
-    dockerfile: Dockerfile.dist
+    dockerfile: image/Dockerfile.dist
     depends_on:
       - dev
     watch_files:
@@ -32,25 +32,25 @@ targets:
       - setup.py
 
   dev:
-    dockerfile: Dockerfile.dev
+    dockerfile: image/Dockerfile.dev
     depends_on:
       - tools
       - wheels
       - dev-wheels
 
   wheels:
-    dockerfile: Dockerfile.wheels
+    dockerfile: image/Dockerfile.wheels
     depends_on:
       - tools
     watch_files:
       - requirements.txt
 
   dev-wheels:
-    dockerfile: Dockerfile.dev-wheels
+    dockerfile: image/Dockerfile.dev-wheels
     depends_on:
       - tools
     watch_files:
       - requirements-dev.txt
 
   tools:
-    dockerfile: Dockerfile.tools
+    dockerfile: image/Dockerfile.tools

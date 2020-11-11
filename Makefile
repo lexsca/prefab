@@ -17,7 +17,7 @@ help:
 
 clean:
 	rm -fr lib/*.egg-info dist build .pytest_cache $(VERSION_PY) \
-		.coverage *.spec docs/_build/* docs/_build/.??*
+		.coverage coverage.xml *.spec docs/_build/* docs/_build/.??*
 	find . -type d -name __pycache__ -exec /bin/rm -fr {} +
 	find . -depth -type f -name '*.pyc' -exec /bin/rm -fr {} +
 
@@ -28,7 +28,7 @@ docker-clean:
 spotless: clean docker-clean
 
 bootstrap:
-	docker build -t $(IMAGE_REPO):bootstrap -f Dockerfile.tools .
+	docker build -t $(IMAGE_REPO):bootstrap -f image/Dockerfile.tools .
 	docker run --rm -it -v $(shell /bin/pwd):/build -w /build \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		--entrypoint /bootstrap.sh $(IMAGE_REPO):bootstrap \
