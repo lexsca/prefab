@@ -1,38 +1,38 @@
-class ContainerPrefabError(Exception):
+class PrefabError(Exception):
     pass
 
 
-class HashAlgorithmNotFound(ContainerPrefabError):
+class HashAlgorithmNotFound(PrefabError):
     pass
 
 
-class ImageAccessError(ContainerPrefabError):
+class ImageAccessError(PrefabError):
     pass
 
 
-class ImageBuildError(ContainerPrefabError):
+class ImageBuildError(PrefabError):
     pass
 
 
-class ImageNotFoundError(ContainerPrefabError):
+class ImageNotFoundError(PrefabError):
     pass
 
 
-class ImagePushError(ContainerPrefabError):
+class ImagePushError(PrefabError):
     pass
 
 
-class ImageValidationError(ContainerPrefabError):
+class ImageValidationError(PrefabError):
     pass
 
 
-class InvalidConfigError(ContainerPrefabError):
+class InvalidConfigError(PrefabError):
     pass
 
 
-class TargetCyclicError(ContainerPrefabError):
+class TargetCyclicError(PrefabError):
     pass
 
 
-class TargetNotFoundError(ContainerPrefabError):
+class TargetNotFoundError(PrefabError):
     pass
