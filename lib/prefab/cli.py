@@ -4,10 +4,11 @@ import json
 import sys
 import time
 import traceback
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
-from . import constants as C
 from . import __version__ as VERSION
+from . import constants as C
+from . import envfile
 from .color import color
 from .config import Config
 from .logger import logger
@@ -111,12 +112,18 @@ def parse_args(args: List[str]) -> Tuple[argparse.Namespace, Config]:
 
     logger.info(color.header(f"\nContainer Prefab v:{VERSION}"))
     logger.info(f"Called with args: {color.config(json.dumps(args))}")
-    logger.info(f"Loading config file: {color.config(options.config_file)}")
+    logger.info(f"Loaded config file: {color.config(config.path)}")
+    write_envfiles()
 
     logger.info(color.header("\nConfig options:"))
     config.display_options()
 
     return options, config
+
+
+def write_envfiles(envfiles: Dict[str, str] = C.DEFAULT_ENVFILES) -> None:
+    for env_key, dest_path in envfiles.items():
+        envfile.write(env_key, dest_path)
 
 
 def elapsed_time(monotonic_start: float) -> str:

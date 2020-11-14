@@ -21,10 +21,13 @@ DEFAULT_COLOR_STYLE: Dict[str, int] = {
     "header": 129,
     "image": 185,
     "target": 33,
-    "warning": 5,
+    "warning": 202,
 }
 DEFAULT_CONFIG_FILE = "prefab.yml"
 DEFAULT_DIGEST_LABEL = "prefab.digest"
+DEFAULT_ENVFILES: Dict[str, str] = {
+    "REGISTRY_AUTH": "/auth.json",
+}
 DEFAULT_HASH_ALGORITHM = "sha256"
 DEFAULT_HASH_CHUNK_SIZE = 65535
 DEFAULT_IGNORE_FILES: List[str] = []

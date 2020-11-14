@@ -81,9 +81,9 @@ cache-clean:
 	docker image prune -f
 
 cache-push:
-	docker run --rm -it -v $(shell /bin/pwd):/build -w /build \
-		-v $(HOME)/.docker/config.json:/auth.json \
+	@docker run --rm -it -v $(shell /bin/pwd):/build -w /build \
 		-v /var/run/docker.sock:/docker.sock -e PYTHONPATH=lib \
+		-e REGISTRY_AUTH=$(shell jq -c . ~/.docker/config.json | base64) \
 		$(IMAGE_REPO):dev bin/container-prefab -c image/prefab.yaml \
 		-r $(IMAGE_REPO) -t dist -p tools wheels dev-wheels dist
 
@@ -108,6 +108,13 @@ git-tag-push:
 	git push origin $(RELEASE_TAG)
 
 publish: image-push pypi-upload report-coverage git-tag-push
+
+consistent:
+ifneq ($(shell git status --porcelain | wc -l), 0)
+	$(error uncommited changes)
+endif
+
+deploy: consistent spotless bootstrap release smoke-test publish
 
 requirements.txt: requirements.in
 	pip-compile -v requirements.in
