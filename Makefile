@@ -96,7 +96,7 @@ image-push:
 	docker push $(IMAGE_REPO):dood
 
 pypi-upload:
-	docker run --rm -it -e TWINE_PASSWORD=$(TWINE_PASSWORD) \
+	@docker run --rm -it -e TWINE_PASSWORD=$(TWINE_PASSWORD) \
 		$(IMAGE_REPO):pypi-$(VERSION)
 
 report-coverage:
