@@ -109,12 +109,7 @@ git-tag-push:
 
 publish: image-push pypi-upload report-coverage git-tag-push
 
-consistent:
-ifneq ($(shell git status --porcelain | wc -l), 0)
-	$(error uncommited changes)
-endif
-
-deploy: consistent spotless bootstrap release smoke-test publish
+deploy: spotless bootstrap release smoke-test publish
 
 requirements.txt: requirements.in
 	pip-compile -v requirements.in
