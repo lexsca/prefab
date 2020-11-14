@@ -12,7 +12,7 @@ COPY README.* .
 
 RUN python3 setup.py sdist bdist_wheel && \
     pip3 install dist/*.whl && \
-    which container-prefab | xargs pyinstaller --onefile
+    which prefab | xargs pyinstaller --onefile
 
 FROM scratch
 

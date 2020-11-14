@@ -20,6 +20,8 @@ targets:
     dockerfile: image/Dockerfile.dind
     depends_on:
       - dist
+    watch_files:
+      - image/entrypoint.dind
 
   dist:
     dockerfile: image/Dockerfile.dist

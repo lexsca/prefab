@@ -22,7 +22,7 @@ from prefab import __version__
 
 # -- Project information -----------------------------------------------------
 
-project = "container-prefab"
+project = "prefab"
 copyright = "2020, Lex Scarisbrick"
 author = "Lex Scarisbrick"
 

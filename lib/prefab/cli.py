@@ -16,8 +16,7 @@ from .image import DockerImage, FakeImage, ImageFactory, ImageGraph
 
 
 def _arg_parser() -> argparse.ArgumentParser:
-    description = "build container images faster"
-    parser = argparse.ArgumentParser(description=description)
+    parser = argparse.ArgumentParser(description="Build container images faster ⚡️")
 
     parser.add_argument(
         "--config",

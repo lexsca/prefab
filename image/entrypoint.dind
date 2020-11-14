@@ -38,4 +38,4 @@ else
     printf "success! 🐳\n"
 fi
 
-exec container-prefab $@
+exec prefab $@

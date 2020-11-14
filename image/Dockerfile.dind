@@ -7,7 +7,7 @@ RUN mkdir -p /root/.docker && \
     echo '{"auths":{}}' > /auth.json && \
     ln -fs /auth.json /root/.docker/config.json
 
-COPY --from=dist /container-prefab /usr/local/bin/container-prefab
+COPY --from=dist /prefab /usr/local/bin/prefab
 COPY image/entrypoint.dind /entrypoint-prefab
 
 ENTRYPOINT ["/entrypoint-prefab"]

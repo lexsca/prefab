@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="container-prefab",
-    description="Efficiently build container images",
+    description="Build container images faster ⚡️",
     # long_description=open('README.rst').read(),
     author="Lex Scarisbrick",
     author_email="lex@scarisbrick.org",
@@ -21,6 +21,6 @@ setup(
     url="https://github.com/lexsca/prefab.git",
     package_dir={"": "lib"},
     packages=["prefab", "prefab.image"],
-    scripts=["bin/container-prefab"],
+    scripts=["bin/prefab"],
     install_requires=["docker", "pyyaml"],
 )

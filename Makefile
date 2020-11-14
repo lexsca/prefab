@@ -55,7 +55,7 @@ version:
 	echo '__version__ = "$(VERSION)"' > $(VERSION_PY)
 
 build:
-	bin/container-prefab -c image/prefab.yaml -r $(IMAGE_REPO) \
+	bin/prefab -c image/prefab.yaml -r $(IMAGE_REPO) \
 		-t pypi:pypi-$(VERSION)  dind:dind-$(VERSION) dood:dood-$(VERSION)
 
 release: version
@@ -84,7 +84,7 @@ cache-push:
 	@docker run --rm -it -v $(shell /bin/pwd):/build -w /build \
 		-v /var/run/docker.sock:/docker.sock -e PYTHONPATH=lib \
 		-e REGISTRY_AUTH=$(shell jq -c . ~/.docker/config.json | base64) \
-		$(IMAGE_REPO):dev bin/container-prefab -c image/prefab.yaml \
+		$(IMAGE_REPO):dev bin/prefab -c image/prefab.yaml \
 		-r $(IMAGE_REPO) -t dist -p tools wheels dev-wheels dist
 
 image-push:
