@@ -251,7 +251,7 @@ def test_build_on_allowed_pull_error(caplog, a_graph):
     ]
 
 
-def test_target_image_pull_stops_tree_traversal(caplog, abc_graph):
+def test_target_a_image_pull_stops_graph_traversal(caplog, abc_graph):
     abc_graph.build(["a"])
 
     assert caplog.messages[-4:] == [
@@ -262,18 +262,7 @@ def test_target_image_pull_stops_tree_traversal(caplog, abc_graph):
     ]
 
 
-def test_target_a_image_pull_stops_tree_traversal(caplog, abc_graph):
-    abc_graph.build(["a"])
-
-    assert caplog.messages[-4:] == [
-        "\nBuilding [a] target with dependencies: [b], [c]",
-        "[a] repo:33cb9338a826 Image not loaded",
-        "[a] repo:33cb9338a826 Trying pull...",
-        "[a] repo:33cb9338a826 Image validated",
-    ]
-
-
-def test_target_b_image_pull_stops_tree_traversal(caplog, abc_graph):
+def test_target_b_image_pull_stops_graph_traversal(caplog, abc_graph):
     abc_graph.resolve_build_targets(["a"])
     abc_graph.images["a"].raise_on.pull = E.ImageNotFoundError
     abc_graph.build(["a"])
