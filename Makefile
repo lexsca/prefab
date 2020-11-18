@@ -117,6 +117,6 @@ requirements.txt: requirements.in
 requirements-dev.txt: requirements-dev.in
 	pip-compile -v requirements-dev.in
 
-refesh-requirements:
+refresh-requirements:
 	rm -f requirements.txt requirements-dev.txt
 	$(MAKE) requirements.txt requirements-dev.txt
