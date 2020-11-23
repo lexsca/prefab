@@ -13,9 +13,9 @@ A variation of the above [xkcd webcomic](https://xkcd.com/303/) might be, "conta
 
 ## Quickstart
 
-This is a simple example of a Python app which has package dependencies that take several minutes to compile.  After the first run of *Prefab*, subsequent runs will take substantially less time.  More importantly, the cache can be pushed to an image repository as an ordinary container image.  Clone this repo, or copy files from the [example directory](https://github.com/lexsca/prefab/tree/main/example) to build the example app.
+This is a simple example of a Python app which has package dependencies that take several minutes to compile.  After the first run of *Prefab*, subsequent runs will take substantially less time.  More importantly, the cache can be pushed to an image repository as an ordinary container image.  Clone this repo, or copy files from the [example directory](https://github.com/lexsca/prefab/tree/main/example) to build the example app below.
 
-To run *prefab* as a container to build the example app in a linux or mac terminal:
+To run *Prefab* as a container to build the example app in a Linux or Mac terminal:
 
 
 ```
@@ -29,6 +29,6 @@ docker run --rm -v `pwd`:/build -w /build \
 To run *Prefab* as a Python package to build the example app:
 
 ```
-pip3 install container-prefab
+pip install container-prefab
 prefab --repo quay.io/lexsca/example --target app:app
 ```
