@@ -20,8 +20,8 @@ To run *prefab* as a container to build the example app in a linux or mac termin
 
 ```
 docker run --rm -v `pwd`:/build -w /build \
-    -v /var/run/docker.sock:/var/run/docker.sock 
-    quay.io/lexsca/prefab:dood 
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    quay.io/lexsca/prefab:dood \
     --repo quay.io/lexsca/example --target app:app
 
 ```
