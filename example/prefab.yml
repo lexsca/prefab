@@ -1,0 +1,11 @@
+targets:
+
+  app:
+    dockerfile: Dockerfile.app
+    depends_on:
+      - packages
+    watch_files:
+      - app.py
+
+  packages:
+    dockerfile: Dockerfile.packages

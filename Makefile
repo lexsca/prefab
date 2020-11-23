@@ -36,7 +36,7 @@ bootstrap:
 
 shell:
 	docker run --rm -it -v $(shell /bin/pwd):/prefab -w /prefab \
-		-v /var/run/docker.sock:/docker.sock -e PYTHONPATH=lib \
+		-v /var/run/docker.sock:/docker.sock -e PYTHONPATH=/prefab/lib \
 		--entrypoint /bin/bash $(IMAGE_REPO):dev --login -o vi
 
 format:
