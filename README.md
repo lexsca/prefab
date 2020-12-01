@@ -94,7 +94,7 @@ docker pull quay.io/lexsca/prefab:dind
 To run the *Prefab* Docker in Docker image to build an push a build target:
 
 ```
-docker run --rm -it -v $(/bin/pwd):/build -w /build \
+docker run --rm -it -v $(/bin/pwd):/build -w /build --privileged \
     -e REGISTRY_AUTH=$(jq -c . ~/.docker/config.json | base64) \                
     quay.io/lexsca/prefab:dind --repo repo.tld/org/project \
     --push --target name
