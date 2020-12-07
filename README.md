@@ -7,9 +7,9 @@
 [![shields.io](https://img.shields.io/pypi/pyversions/container-prefab.svg)](https://pypi.org/project/container-prefab/) [![shields.io](https://img.shields.io/pypi/v/container-prefab.svg)](https://pypi.org/project/container-prefab/) [![shields.io](https://img.shields.io/pypi/wheel/container-prefab.svg)](https://pypi.org/project/container-prefab/) [![readthedocs.org](https://readthedocs.org/projects/prefab/badge/?version=stable)](https://prefab.readthedocs.io/en/stable/?badge=stable) [![coveralls.io](https://coveralls.io/repos/github/lexsca/prefab/badge.svg?branch=main)](https://coveralls.io/github/lexsca/prefab?branch=main) [![shields.io](https://img.shields.io/github/license/lexsca/prefab.svg)](https://github.com/lexsca/prefab/blob/master/LICENSE) [![shields.io](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 
-A variation of the above [xkcd webcomic](https://xkcd.com/303/) might be, "containers are building!"  If it takes way too long to build containers, *Prefab* might be able to help!
+*Prefab* is a Python-based container image build tool that uses deterministic remote caching to reduce build times.
 
-*Prefab* is a Python-based container image build tool that uses deterministic remote caching to reduce build times. Unlike [BuildKit](https://github.com/moby/buildkit#cache) and the [Docker CLI](https://docs.docker.com/engine/reference/commandline/build/#specifying-external-cache-sources), which use container layer caching, *Prefab* caches based on a digest of the Dockerfile in combination with digests of specified files and directory trees.  This allows *Prefab* to check for and pull cached images before resorting to building a new image.
+Unlike [BuildKit](https://github.com/moby/buildkit#cache) and the [Docker CLI](https://docs.docker.com/engine/reference/commandline/build/#specifying-external-cache-sources), which use build layer caching, *Prefab* uses whole image caching based on a digest of the Dockerfile in combination with digests of specified files and directory trees.  This allows *Prefab* to check for and pull cached images before resorting to building a new image.
 
 
 ## Quickstart
