@@ -8,7 +8,7 @@ COPY app.py app.py
 
 RUN apk -U add libxml2 libxslt && \
     pip install --upgrade pip && \
-    pip3 install /packages/* && \
+    pip3 install --no-index --find-links=/packages /packages/* && \
     rm -fr /var/cache/apk/* /packages
 
 CMD ["python3", "app.py"]
