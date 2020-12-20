@@ -100,6 +100,36 @@ docker run --rm -it -v $(/bin/pwd):/build -w /build --privileged \
     --push --target name
 ```
 
+## Configuration
+
+*Prefab* uses a [YAML](https://en.wikipedia.org/wiki/YAML) configuration file to determine which container images to build for a given target and in which order.  This configuration below is taken from the [example directory](https://github.com/lexsca/prefab/tree/main/example) in this repo.
+
+The `prefab.yml` file has two build targets, each with a Dockerfile. The `app` target has a dependency on the `packages` target, so it's built or pulled first, before building the `app` target.  This is a simple example, but the dependency graph can be arbitrarily deep or wide for complex build targets.
+
+##### `prefab.yml`
+```
+targets:
+
+  app:
+    dockerfile: Dockerfile.app
+    depends_on:
+      - packages
+    watch_files:
+      - app.py
+
+  packages:
+    dockerfile: Dockerfile.packages
+```
+
+When building a container image, *Prefab* populates [build arguments](https://docs.docker.com/engine/reference/commandline/build/#set-build-time-variables---build-arg) for each build target depndency, uppercased by convention, and prefixed with `PREFAB_` to avoid conflicts with other build arguments.
+
+##### `Dockerfile.app`
+
+```
+ARG PREFAB_PACKAGES
+
+FROM $PREFAB_PACKAGES as packages
+```
 
 ## Contributing
 
