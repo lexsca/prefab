@@ -7,7 +7,7 @@ dependencies that can take several minutes to compile. Building this app
 demonstrates how *Prefab* caching works and how it can make builds
 faster.
 
-*Note*: The command blocks below expect to be run in the `example <https://github.com/lexsca/prefab/tree/main/example>`__ directory of this source repo. First clone this repo and change to the ``example`` directory before building the example app::
+*Note*: The command blocks below expect to be run in the `example <https://github.com/lexsca/prefab/tree/main/example>`_ directory of this source repo. First clone this repo and change to the ``example`` directory before building the example app::
 
     git clone https://github.com/lexsca/prefab.git
     cd prefab/example
@@ -51,7 +51,7 @@ tag is a truncated version of the target digest::
 
 *Prefab* computes a digest of the build target based on the target name,
 the Dockerfile, and any ``watch_files`` in the
-```prefab.yml`` <https://github.com/lexsca/prefab/blob/main/example/prefab.yml>`__
+`prefab.yml <https://github.com/lexsca/prefab/blob/main/example/prefab.yml>`_
 configuration file. This provides a *deterministic* identifer. So long
 as none of the content changes, the digest and the tag of the image to
 pull will be the same. This allows an image for a build target to be
