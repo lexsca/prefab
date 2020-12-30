@@ -7,9 +7,7 @@ dependencies that can take several minutes to compile. Building this app
 demonstrates how *Prefab* caching works and how it can make builds
 faster.
 
-The command blocks below expect to be run in the
-`example <https://github.com/lexsca/prefab/tree/main/example>`__
-directory of this source repo.
+.. note:: The command blocks below expect to be run in the `example <https://github.com/lexsca/prefab/tree/main/example>`__ directory of this source repo.
 
 Build app
 =========
