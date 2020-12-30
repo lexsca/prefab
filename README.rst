@@ -3,7 +3,7 @@ Prefab
 ######
 
 *Build container images faster* ⚡️
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-----------------------------------
 
 .. image:: https://imgs.xkcd.com/comics/compiling.png
     :target: https://xkcd.com/license.html
