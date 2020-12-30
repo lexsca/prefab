@@ -32,6 +32,7 @@ Prefab
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
     :target: https://github.com/psf/black
 
+|
 
 *Prefab* is a Python-based container image build tool that uses deterministic remote caching to reduce build times.  Unlike `BuildKit <https://github.com/moby/buildkit#cache>`_ and the `Docker CLI <https://docs.docker.com/engine/reference/commandline/build/#specifying-external-cache-sources>`_, which use build layer caching, *Prefab* uses whole image caching based on a digest of the Dockerfile in combination with digests of specified files and directory trees.  This allows *Prefab* to check for and pull cached images before resorting to building a new image.
 
@@ -43,7 +44,7 @@ Look at the `example directory <https://github.com/lexsca/prefab/tree/main/examp
 
 
 Installation and usage
-----------------------
+======================
 
 *Prefab* can be installed and run in three different ways:
 
