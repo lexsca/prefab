@@ -118,6 +118,7 @@ class ImageGraph:
         image = self.images[target]
 
         if force or not self.load_target_image(image):
+            # use a breadth-first to avoid building unneeded images
             for dependent in self.config.get_target(target).get("depends_on", []):
                 self.build_target_images(dependent, force)
             self._build_image(image)
