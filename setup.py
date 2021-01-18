@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name="container-prefab",
     description="Build container images faster ⚡️",
-    long_description=open("README.md").read(),
+    long_description=open("README.rst").read(),
     author="Lex Scarisbrick",
     author_email="lex@scarisbrick.org",
     license="MIT",
