@@ -20,7 +20,7 @@ Mac terminal::
 
     docker run --rm -v `pwd`:/build -w /build \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        quay.io/lexsca/prefab:dood \
+        --platform linux/amd64 quay.io/lexsca/prefab:dood \
         --repo quay.io/lexsca/example --target app:app
 
 To run *Prefab* locally as a Python package to build the example app::
@@ -34,18 +34,18 @@ Inspect build
 After building there should be two images::
 
     docker images quay.io/lexsca/example
-    REPOSITORY               TAG                 IMAGE ID            CREATED             SIZE
-    quay.io/lexsca/example   app                 4205b14b1d16        16 seconds ago      74MB
-    quay.io/lexsca/example   090b6f96b40a        c9b5633ac7f8        26 seconds ago      4.39MB
+    REPOSITORY               TAG            IMAGE ID       CREATED         SIZE
+    quay.io/lexsca/example   app            29143dbab1cd   3 minutes ago   82.2MB
+    quay.io/lexsca/example   a2a68e4b90b7   a5f145ea15bc   7 days ago      3.96MB
 
 Notice that the image with the hexadecimal tag is the ``packages``
 target that was pulled instead of having to build it, and that the image
 tag is a truncated version of the target digest::
 
-    docker inspect quay.io/lexsca/example:090b6f96b40a \
+    docker inspect quay.io/lexsca/example:a2a68e4b90b7 \
         | jq -M '.[].Config.Labels'
     {
-      "prefab.digest": "sha256:090b6f96b40aeeac66a0a87ef6ea3ca682f337b580851965b97f16cb5de00280",
+      "prefab.digest": "sha256:a2a68e4b90b7e2a5c8fec7e5fe73401964ef64ee0c5593ca4ca6a0d4cc67c5f3",
       "prefab.target": "packages"
     }
 
@@ -70,7 +70,7 @@ or Mac terminal::
 
     docker run --rm -v `pwd`:/build -w /build \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        quay.io/lexsca/prefab:dood \
+        --platform linux/amd64 quay.io/lexsca/prefab:dood \
         --repo quay.io/lexsca/example --target app:app --force
 
 To run *Prefab* locally as a Python package to force build the example
@@ -86,6 +86,7 @@ The example app really is functional, albeit not terribly interesting.
 It takes a POST with HTML content and returns a plain text rendering of
 the HTML content. To run and test it::
 
-    docker run -it --rm -p 8000:8000 quay.io/lexsca/example:app
+    docker run --platform linux/amd64 -it --rm -p 8000:8000 \
+        quay.io/lexsca/example:app
 
     curl -d '<html>Prefab &#x26a1;</html>' http://127.0.0.1:8000/
