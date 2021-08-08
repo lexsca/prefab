@@ -2,6 +2,8 @@ targets:
 
   app:
     dockerfile: Dockerfile.app
+    build_options:
+      platform: linux/amd64
     depends_on:
       - packages
     watch_files:
@@ -9,3 +11,5 @@ targets:
 
   packages:
     dockerfile: Dockerfile.packages
+    build_options:
+      platform: linux/amd64

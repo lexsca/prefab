@@ -1,4 +1,4 @@
-FROM docker.io/library/python:3.8-alpine as packages
+FROM --platform=linux/amd64 docker.io/library/python:3.8-alpine as packages
 
 RUN apk -U add alpine-sdk libxml2-dev libxslt-dev && \
     pip install --upgrade pip && \

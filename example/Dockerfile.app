@@ -1,7 +1,7 @@
 ARG PREFAB_PACKAGES
 
-FROM $PREFAB_PACKAGES as packages
-FROM docker.io/library/python:3.8-alpine
+FROM --platform=linux/amd64 $PREFAB_PACKAGES as packages
+FROM --platform=linux/amd64 docker.io/library/python:3.8-alpine
 
 COPY --from=packages /packages /packages
 COPY app.py app.py
