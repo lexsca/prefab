@@ -23,7 +23,7 @@ from prefab import __version__
 # -- Project information -----------------------------------------------------
 
 project = "prefab"
-copyright = "2020, Lex Scarisbrick"
+copyright = "2021, Lex Scarisbrick"
 author = "Lex Scarisbrick"
 
 # The full version, including alpha/beta/rc tags

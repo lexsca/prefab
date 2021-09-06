@@ -1,6 +1,5 @@
+.. include:: ../README.rst
 
-Welcome to Prefab's documentation!
-============================================
 
 .. toctree::
    :maxdepth: 2
