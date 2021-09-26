@@ -9,7 +9,8 @@ FROM $PREFAB_TOOLS
 COPY --from=wheels /wheels /wheels
 COPY --from=dev-wheels /wheels /wheels
 
-RUN pip3 install /wheels/*.whl && \
+RUN pip3 install -U pip && \
+    pip3 install /wheels/*.whl && \
     rm -fr /wheels && \
     apk -U add git bash bash-completion git-bash-completion && \
     rm -fr /var/cache/apk/* /root/.cache
