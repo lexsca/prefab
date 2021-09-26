@@ -53,6 +53,7 @@ importlib-metadata==2.0.0
     # via
     #   flake8
     #   keyring
+    #   pep517
     #   pluggy
     #   pytest
     #   stevedore
@@ -86,7 +87,9 @@ pathspec==0.8.1
     # via black
 pbr==5.5.1
     # via stevedore
-pip-tools==5.3.1
+pep517==0.11.0
+    # via pip-tools
+pip-tools==6.3.0
     # via -r requirements-dev.in
 pkginfo==1.6.1
     # via twine
@@ -140,7 +143,6 @@ six==1.15.0
     #   bleach
     #   cryptography
     #   packaging
-    #   pip-tools
     #   readme-renderer
 smmap==3.0.4
     # via gitdb
@@ -170,6 +172,8 @@ toml==0.10.2
     # via
     #   black
     #   pytest
+tomli==1.2.1
+    # via pep517
 tqdm==4.52.0
     # via twine
 twine==3.2.0
@@ -187,9 +191,13 @@ urllib3==1.26.2
 webencodings==0.5.1
     # via bleach
 wheel==0.35.1
-    # via -r requirements-dev.in
+    # via
+    #   -r requirements-dev.in
+    #   pip-tools
 zipp==3.4.0
-    # via importlib-metadata
+    # via
+    #   importlib-metadata
+    #   pep517
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip
