@@ -44,8 +44,8 @@ format:
 
 lint:
 	black --check --diff .
-	flake8 bin lib tests
-	bandit -r bin lib
+	flake8 .
+	bandit .
 	mypy --ignore-missing-imports --cache-dir=/dev/null .
 
 test: clean lint
