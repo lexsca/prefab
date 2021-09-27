@@ -92,4 +92,4 @@ def test_write_handles_decode_error(bad_env_key, dest_path, dockerenv_path, capl
 def test_write_handles_io_error(auth_env_key, dockerenv_path, caplog):
     envfile.write(ENV_KEY, "/sys/is_a_ro_fs", dockerenv_path)
 
-    assert "OSError: [Errno 30] Read-only file system" in caplog.text
+    assert "Failed to write REGISTRY_AUTH to /sys/is_a_ro_fs" in caplog.text

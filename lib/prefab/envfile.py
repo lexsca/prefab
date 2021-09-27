@@ -29,7 +29,11 @@ def _write(env_key: str, dest_path: str) -> None:
             )
         )
     except Exception as error:
-        logger.warning(color.warning(f"{type(error).__name__}: {error}"))
+        logger.warning(
+            color.warning(
+                f"Failed to write {env_key} to {dest_path}: {type(error).__name__}: {error}"
+            )
+        )
 
 
 def _commit(dest_path: str, content: bytes) -> None:
