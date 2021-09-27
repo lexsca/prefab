@@ -1,13 +1,11 @@
 bandit
 black
-coveralls
 flake8
 mypy
 pip-tools
 pytest
 pytest-cov
 pytest-random-order
-recommonmark
 sphinx
 sphinx-rtd-theme
 twine

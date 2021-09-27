@@ -15,9 +15,9 @@ import sys
 
 sys.path.insert(0, os.path.abspath("../lib"))
 
-import sphinx_rtd_theme
+import sphinx_rtd_theme  # noqa: E402,F401
 
-from prefab import __version__
+from prefab import __version__  # noqa: E402
 
 
 # -- Project information -----------------------------------------------------
