@@ -23,4 +23,8 @@ setup(
     packages=["prefab", "prefab.image"],
     scripts=["bin/prefab"],
     install_requires=["docker", "pyyaml"],
+    use_scm_version={
+        "write_to": "lib/prefab/version.py",
+        "write_to_template": "__version__ = '{version}'",
+    },
 )
