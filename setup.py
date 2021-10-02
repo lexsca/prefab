@@ -2,8 +2,6 @@ import json
 import os
 from setuptools import setup
 
-print(json.dumps(dict(os.environ), indent=4, sort_keys=True))
-
 setup(
     name="container-prefab",
     description="Build container images faster ⚡️",
@@ -27,4 +25,8 @@ setup(
     packages=["prefab", "prefab.image"],
     scripts=["bin/prefab"],
     install_requires=["docker", "pyyaml"],
+    use_scm_version={
+        "write_to": "lib/prefab/version.py",
+        "write_to_template": "__version__ = '{version}'",
+    },
 )
