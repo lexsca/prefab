@@ -100,8 +100,8 @@ pypi-upload:
 		$(IMAGE_REPO):pypi-$(VERSION)
 
 git-tag-push:
-	git tag $(RELEASE_TAG) HEAD
-	git push origin $(RELEASE_TAG)
+	git tag v$(RELEASE_TAG) HEAD
+	git push origin v$(RELEASE_TAG)
 
 publish: image-push pypi-upload git-tag-push
 
