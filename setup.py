@@ -1,4 +1,8 @@
+import json
+import os
 from setuptools import setup
+
+print(json.dumps(dict(os.environ), indent=4, sort_keys=True))
 
 setup(
     name="container-prefab",
