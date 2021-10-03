@@ -8,7 +8,7 @@ setup(
     author_email="lex@scarisbrick.org",
     license="MIT",
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
         "Intended Audience :: Information Technology",
         "Intended Audience :: System Administrators",
@@ -16,6 +16,8 @@ setup(
         "Topic :: Software Development :: Build Tools",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
     ],
     python_requires=">=3.7",
     url="https://github.com/lexsca/prefab.git",
