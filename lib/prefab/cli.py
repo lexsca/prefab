@@ -165,7 +165,7 @@ def cli(args: List[str]) -> None:
     )
 
     if options.push or options.push_all:
-        push_images(options)
+        push_images(image_graph, options)
         logger.info(
             f"{color.elapsed('Total elapsed time:')} {elapsed_time(start_time)}\n"
         )
