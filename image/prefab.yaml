@@ -4,6 +4,15 @@ options:
     - "*.egg-info"
     - "*.swp"
 
+  color_style:
+    config: 2
+    elapsed: 11
+    error: 1
+    header: 5
+    image: 3
+    target: 6
+    warning: 3
+
 targets:
   pypi:
     dockerfile: image/Dockerfile.pypi
