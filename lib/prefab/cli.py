@@ -54,6 +54,12 @@ def _arg_parser() -> argparse.ArgumentParser:
         help="Image target(s) to push to repo after building",
     )
     parser.add_argument(
+        "--push-all",
+        dest="push_all",
+        action="store_true",
+        help="Push all image targets to repo after building",
+    )
+    parser.add_argument(
         "--repo",
         "-r",
         dest="repo",
@@ -125,6 +131,18 @@ def write_envfiles(envfiles: Dict[str, str] = C.DEFAULT_ENVFILES) -> None:
         envfile.write(env_key, dest_path)
 
 
+def push_images(image_graph: ImageGraph, options: argparse.Namespace) -> None:
+    start_time = time.monotonic()
+    logger.info(color.header("Pushing images"))
+
+    if options.push_all:
+        image_graph.push_all()
+    elif options.push:
+        image_graph.push(options.push)
+
+    logger.info(f"\n{color.elapsed('Push elapsed time: ')} {elapsed_time(start_time)}")
+
+
 def elapsed_time(monotonic_start: float) -> str:
     elapsed_time = datetime.timedelta(seconds=time.monotonic() - monotonic_start)
     seconds = elapsed_time.seconds
@@ -135,7 +153,7 @@ def elapsed_time(monotonic_start: float) -> str:
 
 
 def cli(args: List[str]) -> None:
-    build_start_time = time.monotonic()
+    start_time = time.monotonic()
     options, config = parse_args(args)
 
     image_constructor = FakeImage if options.noop else DockerImage
@@ -143,17 +161,13 @@ def cli(args: List[str]) -> None:
     image_graph = ImageGraph(config, image_factory)
     image_graph.build(options.targets, options.force)
     logger.info(
-        f"\n{color.elapsed('Build elapsed time:')} {elapsed_time(build_start_time)}\n"
+        f"\n{color.elapsed('Build elapsed time:')} {elapsed_time(start_time)}\n"
     )
 
-    if options.push:
-        push_start_time = time.monotonic()
-        image_graph.push(options.push)
+    if options.push or options.push_all:
+        push_images(options)
         logger.info(
-            f"\n{color.elapsed('Push elapsed time: ')} {elapsed_time(push_start_time)}"
-        )
-        logger.info(
-            f"{color.elapsed('Total elapsed time:')} {elapsed_time(build_start_time)}\n"
+            f"{color.elapsed('Total elapsed time:')} {elapsed_time(start_time)}\n"
         )
 
 

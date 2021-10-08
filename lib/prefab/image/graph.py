@@ -156,8 +156,6 @@ class ImageGraph:
             self.build_target_images(target, force)
 
     def push(self, targets: List[str]) -> None:
-        logger.info(color.header("Pushing images"))
-
         for image in [self.images[target] for target in targets]:
             if image.is_loaded:
                 if image.was_pulled and not image.was_built:
@@ -167,3 +165,8 @@ class ImageGraph:
                 else:
                     image.logger.info(f"{color.image(image.name)} Trying push...")
                     image.push()
+
+    def push_all(self) -> None:
+        for image in self.images.values():
+            image.logger.info(f"{color.image(image.name)} Trying push...")
+            image.push()
