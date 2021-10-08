@@ -30,7 +30,6 @@ targets:
     watch_files:
       - lib/
       - bin/
-      - setup.cfg
       - setup.py
 
   dev:

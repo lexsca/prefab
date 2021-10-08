@@ -6,7 +6,6 @@ WORKDIR /build
 
 COPY lib/ lib/
 COPY bin/ bin/
-COPY setup.cfg setup.cfg
 COPY setup.py setup.py
 COPY README.* .
 
