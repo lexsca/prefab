@@ -1,7 +1,6 @@
 ARG PREFAB_DEV
 
 FROM $PREFAB_DEV as dev
-
 WORKDIR /build
 
 COPY lib/ lib/
@@ -11,10 +10,7 @@ COPY README.* .
 
 RUN python3 setup.py sdist bdist_wheel && \
     pip3 install dist/*.whl && \
-    which prefab | xargs pyinstaller --onefile \
-        --hidden-import cryptography.hazmat.backends.openssl \
-        --hidden-import cffi
+    which prefab | xargs pyinstaller --onefile
 
 FROM scratch
-
 COPY --from=dev /build/dist/* /

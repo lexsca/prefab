@@ -54,9 +54,9 @@ test: clean lint
 version:
 	echo '__version__ = "$(VERSION)"' > $(VERSION_PY)
 
-build:
+build: version
 	bin/prefab -c image/prefab.yaml -r $(IMAGE_REPO) \
-		-t pypi:pypi-$(VERSION)  dind:dind-$(VERSION) dood:dood-$(VERSION)
+		-t pypi:pypi-$(VERSION) dind:dind-$(VERSION) dood:dood-$(VERSION)
 
 release: version
 	docker run --rm -it -v $(shell /bin/pwd):/prefab -w /prefab \
@@ -69,9 +69,9 @@ smoke-test:
 	docker run --rm -it -v $(shell /bin/pwd):/build -w /build \
 		-v /var/run/docker.sock:/docker.sock $(IMAGE_REPO):dood-$(VERSION) \
 		-c image/prefab.yaml -r $(IMAGE_REPO) -t dind dood pypi
-	docker run --rm -it -v $(shell /bin/pwd):/build -w /build --privileged \
-		$(IMAGE_REPO):dind-$(VERSION) -c image/prefab.yaml \
-		-r $(IMAGE_REPO) -t dind dood pypi
+#	docker run --rm -it -v $(shell /bin/pwd):/build -w /build --privileged \
+#		$(IMAGE_REPO):dind-$(VERSION) -c image/prefab.yaml \
+#		-r $(IMAGE_REPO) -t dind dood pypi
 
 cache-clean: IMAGES = $(shell \
 	docker images --format '{{.Repository}}:{{.Tag}}' ${IMAGE_REPO} | \

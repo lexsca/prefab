@@ -1,15 +1,16 @@
 ARG PREFAB_TOOLS
 
 FROM $PREFAB_TOOLS as wheels
+ARG PYINSTALLER_VERSION=v4.5.1
 COPY requirements-dev.txt requirements-dev.txt
 RUN pip3 wheel -w /wheels -r requirements-dev.txt
 
 # configure pyinstaller bootloader for alpine linux
-RUN git clone --single-branch --branch develop \
+RUN git clone --depth 1 --single-branch --branch $PYINSTALLER_VERSION \
         https://github.com/pyinstaller/pyinstaller.git /tmp/pyinstaller && \
     cd /tmp/pyinstaller/bootloader && \
-    git checkout v3.6 && \
-    python3 ./waf configure --no-lsb all && \
+    CFLAGS="-Wno-stringop-overflow -Wno-stringop-truncation" python3 \
+        ./waf configure --no-lsb all && \
     cd .. && \
     python setup.py bdist_wheel && \
     cp dist/*.whl /wheels

@@ -6,8 +6,6 @@
 #
 alabaster==0.7.12
     # via sphinx
-altgraph==0.17.2
-    # via pyinstaller
 attrs==21.2.0
     # via pytest
 babel==2.9.1
@@ -104,10 +102,6 @@ pygments==2.10.0
     # via
     #   readme-renderer
     #   sphinx
-pyinstaller==4.5.1
-    # via -r requirements-dev.in
-pyinstaller-hooks-contrib==2021.3
-    # via pyinstaller
 pyparsing==2.4.7
     # via packaging
 pytest==6.2.5

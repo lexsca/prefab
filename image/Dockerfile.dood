@@ -1,7 +1,7 @@
 ARG PREFAB_DIST
 
 FROM $PREFAB_DIST as dist
-FROM alpine:3.12
+FROM alpine:3.13
 
 RUN mkdir -p /root/.docker && \
     echo '{"auths":{}}' > /auth.json && \
