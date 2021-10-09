@@ -8,7 +8,7 @@ options:
     config: 2
     elapsed: 11
     error: 9
-    header: 11
+    header: null
     image: 3
     target: 6
     warning: 1

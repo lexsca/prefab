@@ -17,8 +17,11 @@ class Color:
 
                 def colorizer(this, text: str, style: str = style) -> str:
                     # https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit
-                    code = f"\x1b[38;5;{self.style.get(style, 0)}m"
-                    return f"{code}{text}{self.reset}" if this.enabled else text
+                    color_code = self.style.get(style)
+                    color_seq = f"\x1b[38;5;{color_code}m"
+                    colorize = this.enabled and color_code is not None
+
+                    return f"{color_seq}{text}{self.reset}" if colorize else text
 
                 setattr(cls, style, colorizer)
 

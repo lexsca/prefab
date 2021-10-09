@@ -18,7 +18,7 @@ DEFAULT_COLOR_STYLE: Dict[str, int] = {
     "config": 2,
     "elapsed": 11,
     "error": 9,
-    "header": 11,
+    "header": None,
     "image": 3,
     "target": 6,
     "warning": 1,
