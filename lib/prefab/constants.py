@@ -17,7 +17,7 @@ DEFAULT_BUILD_ON_VALIDATE_ERROR = True
 DEFAULT_COLOR_STYLE: Dict[str, int] = {
     "config": 2,
     "elapsed": 11,
-    "error": 9,
+    "error": 1,
     "header": None,
     "image": 3,
     "target": 6,

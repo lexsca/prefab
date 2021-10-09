@@ -3,7 +3,7 @@
 		pypi-upload refesh-requirements release shell spotless test \
 		upload-pypi version
 
-IMAGE_REPO ?= quay.io/lexsca/prefab
+IMAGE_REPO ?= lexsca/prefab
 VERSION ?= $(shell TZ=UTC git log -1 --format='%cd' \
 	--date='format-local:%y.%-m.%-d%H%M' HEAD)
 VERSION_PY ?= lib/prefab/version.py

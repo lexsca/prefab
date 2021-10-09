@@ -7,7 +7,7 @@ options:
   color_style:
     config: 2
     elapsed: 11
-    error: 9
+    error: 1
     header: null
     image: 3
     target: 6

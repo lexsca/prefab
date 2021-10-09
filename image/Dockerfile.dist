@@ -11,7 +11,9 @@ COPY README.* .
 
 RUN python3 setup.py sdist bdist_wheel && \
     pip3 install dist/*.whl && \
-    which prefab | xargs pyinstaller --onefile
+    which prefab | xargs pyinstaller --onefile \
+        --hidden-import cryptography.hazmat.backends.openssl \
+        --hidden-import cffi
 
 FROM scratch
 
