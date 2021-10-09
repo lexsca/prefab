@@ -3,6 +3,7 @@ black
 flake8
 mypy
 pip-tools
+pyinstaller
 pytest
 pytest-cov
 pytest-random-order
