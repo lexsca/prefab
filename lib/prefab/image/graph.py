@@ -168,5 +168,6 @@ class ImageGraph:
 
     def push_all(self) -> None:
         for image in self.images.values():
-            image.logger.info(f"{color.image(image.name)} Trying push...")
-            image.push()
+            if image.is_loaded and image.was_built:
+                image.logger.info(f"{color.image(image.name)} Trying push...")
+                image.push()
