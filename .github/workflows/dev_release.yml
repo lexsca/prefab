@@ -35,5 +35,6 @@ jobs:
       run: |
         python setup.py sdist bdist_wheel
         pip install dist/*.whl
-        prefab --config image/prefab.yaml --repo lexsca/prefab --target dind dood --push-all
+        prefab --config image/prefab.yaml --repo lexsca/prefab --push-all \
+          --target "dood:$(python setup.py --version)" "dind:$(python setup.py --version)"
         # twine upload dist/*
