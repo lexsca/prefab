@@ -44,6 +44,6 @@ jobs:
 
     - name: Re-Build with published artifacts
       run: |
-        docker run --rm -it -v ${{ env.GITHUB_WORKSPACE }}:/build -w /build \
+        docker run --rm -v ${{ env.GITHUB_WORKSPACE }}:/build -w /build \
           -v /var/run/docker.sock:/docker.sock lexsca/prefab:dind-${{ env.PREFAB_VERSION }} \
           -c image/prefab.yaml -r lexsca/prefab -t dind dood
