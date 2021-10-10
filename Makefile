@@ -3,7 +3,7 @@
 		pypi-upload refesh-requirements release shell spotless test \
 		upload-pypi version
 
-IMAGE_REPO ?= quay.io/lexsca/prefab
+IMAGE_REPO ?= lexsca/prefab
 VERSION ?= $(shell TZ=UTC git log -1 --format='%cd' \
 	--date='format-local:%y.%-m.%-d%H%M' HEAD)
 VERSION_PY ?= lib/prefab/version.py
@@ -54,9 +54,9 @@ test: clean lint
 version:
 	echo '__version__ = "$(VERSION)"' > $(VERSION_PY)
 
-build:
+build: version
 	bin/prefab -c image/prefab.yaml -r $(IMAGE_REPO) \
-		-t pypi:pypi-$(VERSION)  dind:dind-$(VERSION) dood:dood-$(VERSION)
+		-t pypi:pypi-$(VERSION) dind:dind-$(VERSION) dood:dood-$(VERSION)
 
 release: version
 	docker run --rm -it -v $(shell /bin/pwd):/prefab -w /prefab \

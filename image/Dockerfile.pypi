@@ -3,7 +3,7 @@ ARG PREFAB_DEV_WHEELS
 
 FROM $PREFAB_DIST as dist
 FROM $PREFAB_DEV_WHEELS as dev-wheels
-FROM python:3.7.9-alpine3.12
+FROM python:3.9.7-alpine3.13
 
 COPY --from=dev-wheels /wheels /wheels
 
