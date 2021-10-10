@@ -41,9 +41,10 @@ jobs:
         pip install dist/*.whl
         prefab --config image/prefab.yaml --repo lexsca/prefab --push-all \
           --target dood:dood-${{ env.PREFAB_VERSION }} dind:dind-${{ env.PREFAB_VERSION }}
+        docker tag lexsca/prefab:dood-${{ env.PREFAB_VERSION }} lexsca/prefab:dood-test
 
     - name: Re-Build with published artifacts
-      uses: docker://lexsca/prefab:dind-${{ env.PREFAB_VERSION }}
+      uses: docker://lexsca/prefab:dind-test
       with:
         args: --config image/prefab.yaml --repo lexsca/prefab \
             --target dood:dood-${{ env.PREFAB_VERSION }}
