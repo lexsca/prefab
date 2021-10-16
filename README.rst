@@ -51,7 +51,7 @@ Installation and usage
 #. Docker outside of Docker (DooD) container
 #. Docker in Docker (DinD) container
 
-Use whichever mode works best for the use-case(s) at hand.  Each supports the same CLI arguments:  
+Use whichever mode works best for the use-case(s) at hand.  Each supports the same CLI arguments:
 
 CLI arguments
 -------------
@@ -59,8 +59,8 @@ CLI arguments
 ::
 
     usage: prefab [-h] [--config PATH] [--dry-run] [--force] [--monochrome]
-                  [--push TARGET_NAME [TARGET_NAME ...]] --repo URI --target
-                  TARGET_NAME[:TAG] [TARGET_NAME[:TAG] ...]
+                  [--push TARGET_NAME [TARGET_NAME ...]] [--push-all] --repo URI
+                  --target TARGET_NAME[:TAG] [TARGET_NAME[:TAG] ...]
 
     Build container images faster ⚡️
 
@@ -73,10 +73,11 @@ CLI arguments
       --monochrome, -m      Don't colorize log messages
       --push TARGET_NAME [TARGET_NAME ...], -p TARGET_NAME [TARGET_NAME ...]
                             Image target(s) to push to repo after building
-      --repo URI, -r URI    Image repo to use (e.g. quay.io/lexsca/prefab)
+      --push-all            Push all image targets to repo after building
+      --repo URI, -r URI    Image repo to use (e.g. lexsca/prefab)
       --target TARGET_NAME[:TAG] [TARGET_NAME[:TAG] ...], -t TARGET_NAME[:TAG] [TARGET_NAME[:TAG] ...]
-                            Image target(s) to build with optional custom image
-                            tag
+                            Image target(s) to build with optional custom image tag
+
 
 Local Python package
 --------------------
@@ -89,19 +90,27 @@ To run *Prefab* as a local Python package to build an push a build target::
 
     prefab --repo repo.tld/org/project --push --target name
 
+⚠️  NOTE: Container images now hosted on Docker Hub ⚠️
+-----------------------------------------------------
+
+The container images below used to be hosted by Quay and are now
+hosted by Docker Hub. This decision was not taken lightly. Sadly,
+Quay has not proven to be a reliable service. The final straw was
+when RedHat acquired them and broke authentication.
+
 Docker outside of Docker (DooD)
 -------------------------------
 
 To get the *Prefab* Docker outside of Docker (DooD) image::
 
-    docker pull quay.io/lexsca/prefab:dood
+    docker pull lexsca/prefab:dood
 
 To run the *Prefab* Docker outside of Docker image to build an push a build target::
 
     docker run --rm -it -v $(/bin/pwd):/build -w /build \
         -e REGISTRY_AUTH=$(jq -c . ~/.docker/config.json | base64) \
-        -v /var/run/docker.sock:/docker.sock \                
-        quay.io/lexsca/prefab:dood --repo repo.tld/org/project \
+        -v /var/run/docker.sock:/docker.sock \
+        lexsca/prefab:dood --repo repo.tld/org/project \
         --push --target name
 
 Docker in Docker (DinD)
@@ -109,13 +118,13 @@ Docker in Docker (DinD)
 
 To get the *Prefab* Docker in Docker (DinD) image::
 
-    docker pull quay.io/lexsca/prefab:dind
+    docker pull lexsca/prefab:dind
 
 To run the *Prefab* Docker in Docker image to build an push a build target::
 
     docker run --rm -it -v $(/bin/pwd):/build -w /build --privileged \
-        -e REGISTRY_AUTH=$(jq -c . ~/.docker/config.json | base64) \                
-        quay.io/lexsca/prefab:dind --repo repo.tld/org/project \
+        -e REGISTRY_AUTH=$(jq -c . ~/.docker/config.json | base64) \
+        lexsca/prefab:dind --repo repo.tld/org/project \
         --push --target name
 
 Configuration
@@ -179,19 +188,19 @@ To create a development runtime environment::
 
 The above will create a minimal environment that will allow *Prefab* to build its development environment image.  This image can be used to run linting and tests::
 
-    $ docker images quay.io/lexsca/prefab:dev
-    REPOSITORY              TAG                 IMAGE ID            CREATED              SIZE
-    quay.io/lexsca/prefab   dev                 ddee1cafb775        About a minute ago   429MB
+    $ docker images lexsca/prefab:dev
+    REPOSITORY      TAG                 IMAGE ID            CREATED              SIZE
+    lexsca/prefab   dev                 ddee1cafb775        About a minute ago   429MB
 
 Use environment
 ---------------
 
 Once created, the development image can used via::
 
-    $ make shell 
+    $ make shell
     docker run --rm -it -v /Users/lexsca/git/prefab:/prefab -w /prefab \
             -v /var/run/docker.sock:/docker.sock -e PYTHONPATH=/prefab/lib \
-            --entrypoint /bin/bash quay.io/lexsca/prefab:dev --login -o vi
+            --entrypoint /bin/bash lexsca/prefab:dev --login -o vi
     3053ae861610:/prefab# make test
 
 This will mount the docker socket and current working directory in an environment where tests can be run, dependencies built, or a debugger invoked to aid in iterating.

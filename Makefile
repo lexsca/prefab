@@ -116,3 +116,8 @@ requirements-dev.txt: requirements-dev.in
 refresh-requirements:
 	rm -f requirements.txt requirements-dev.txt
 	$(MAKE) requirements.txt requirements-dev.txt
+
+none-artifact:
+	# used by tests/test_image_docker.py:test_pull_prefab_none
+	echo 'FROM scratch' | docker build --label prefab.target=none -t $(IMAGE_REPO):none -
+	docker push $(IMAGE_REPO):none

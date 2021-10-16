@@ -16,7 +16,7 @@ def test_dry_run(caplog, monkeypatch, prefab_yaml_path, chdir_fixtures):
             "--config",
             prefab_yaml_path,
             "--repo",
-            "quay.io/lexsca/prefab",
+            "lexsca/prefab",
             "--target",
             "a:a",
             "--push",
@@ -35,8 +35,8 @@ def test_dry_run(caplog, monkeypatch, prefab_yaml_path, chdir_fixtures):
     )
 
     assert system_exit.value.code == 0
-    assert caplog.records[-11].message == "[a] quay.io/lexsca/prefab:a Build succeeded"
-    assert caplog.records[-3].message == "[a] quay.io/lexsca/prefab:a Pushed"
+    assert caplog.records[-11].message == "[a] lexsca/prefab:a Build succeeded"
+    assert caplog.records[-3].message == "[a] lexsca/prefab:a Pushed"
     assert target_digest_log_message in caplog.text
 
 
@@ -49,7 +49,7 @@ def test_tag_duplicates_disallowed(monkeypatch, capsys, prefab_yaml_path):
             "--config",
             prefab_yaml_path,
             "--repo",
-            "quay.io/lexsca/prefab",
+            "lexsca/prefab",
             "--target",
             "a:app",
             "b:app",
