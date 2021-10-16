@@ -57,6 +57,7 @@ CLI arguments
 -------------
 
 ::
+
     usage: prefab [-h] [--config PATH] [--dry-run] [--force] [--monochrome]
                   [--push TARGET_NAME [TARGET_NAME ...]] [--push-all] --repo URI
                   --target TARGET_NAME[:TAG] [TARGET_NAME[:TAG] ...]
