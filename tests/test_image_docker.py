@@ -10,9 +10,7 @@ from prefab.image import DockerImage
 @pytest.mark.skipif(not os.path.exists("/var/run/docker.sock"), reason="docker missing")
 def test_pull_prefab_none():
     build_options = {"labels": {"prefab.target": "none"}}
-    image = DockerImage(
-        repo="quay.io/lexsca/prefab", tag="none", build_options=build_options
-    )
+    image = DockerImage(repo="lexsca/prefab", tag="none", build_options=build_options)
     image.pull()
     image.validate()
     image.remove()

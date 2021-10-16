@@ -66,7 +66,7 @@ def _arg_parser() -> argparse.ArgumentParser:
         action="store",
         metavar="URI",
         required=True,
-        help="Image repo to use (e.g. quay.io/lexsca/prefab)",
+        help="Image repo to use (e.g. lexsca/prefab)",
     )
     parser.add_argument(
         "--target",

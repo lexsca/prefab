@@ -20,29 +20,29 @@ Mac terminal::
 
     docker run --rm -v `pwd`:/build -w /build \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        --platform linux/amd64 quay.io/lexsca/prefab:dood \
-        --repo quay.io/lexsca/example --target app:app
+        --platform linux/amd64 lexsca/prefab:dood \
+        --repo lexsca/prefab-example --target app:app
 
 To run *Prefab* locally as a Python package to build the example app::
 
     pip install container-prefab
-    prefab --repo quay.io/lexsca/example --target app:app
+    prefab --repo lexsca/prefab-example --target app:app
 
 Inspect build
 =============
 
 After building there should be two images::
 
-    docker images quay.io/lexsca/example
-    REPOSITORY               TAG            IMAGE ID       CREATED         SIZE
-    quay.io/lexsca/example   app            29143dbab1cd   3 minutes ago   82.2MB
-    quay.io/lexsca/example   a2a68e4b90b7   a5f145ea15bc   7 days ago      3.96MB
+    docker images lexsca/prefab-example
+    REPOSITORY              TAG            IMAGE ID       CREATED         SIZE
+    lexsca/prefab-example   app            29143dbab1cd   3 minutes ago   82.2MB
+    lexsca/prefab-example   a2a68e4b90b7   a5f145ea15bc   7 days ago      3.96MB
 
 Notice that the image with the hexadecimal tag is the ``packages``
 target that was pulled instead of having to build it, and that the image
 tag is a truncated version of the target digest::
 
-    docker inspect quay.io/lexsca/example:a2a68e4b90b7 \
+    docker inspect lexsca/prefab-example:a2a68e4b90b7 \
         | jq -M '.[].Config.Labels'
     {
       "prefab.digest": "sha256:a2a68e4b90b7e2a5c8fec7e5fe73401964ef64ee0c5593ca4ca6a0d4cc67c5f3",
@@ -70,14 +70,14 @@ or Mac terminal::
 
     docker run --rm -v `pwd`:/build -w /build \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        --platform linux/amd64 quay.io/lexsca/prefab:dood \
-        --repo quay.io/lexsca/example --target app:app --force
+        --platform linux/amd64 lexsca/prefab:dood \
+        --repo lexsca/prefab-example --target app:app --force
 
 To run *Prefab* locally as a Python package to force build the example
 app::
 
     pip install container-prefab
-    prefab --repo quay.io/lexsca/example --target app:app --force
+    prefab --repo lexsca/prefab-example --target app:app --force
 
 Run and test app (optional)
 ===========================
@@ -87,6 +87,6 @@ It takes a POST with HTML content and returns a plain text rendering of
 the HTML content. To run and test it::
 
     docker run --platform linux/amd64 -it --rm -p 8000:8000 \
-        quay.io/lexsca/example:app
+        lexsca/prefab-example:app
 
     curl -d '<html>Prefab &#x26a1;</html>' http://127.0.0.1:8000/
