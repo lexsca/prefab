@@ -51,16 +51,15 @@ Installation and usage
 #. Docker outside of Docker (DooD) container
 #. Docker in Docker (DinD) container
 
-Use whichever mode works best for the use-case(s) at hand.  Each supports the same CLI arguments:  
+Use whichever mode works best for the use-case(s) at hand.  Each supports the same CLI arguments:
 
 CLI arguments
 -------------
 
 ::
-
     usage: prefab [-h] [--config PATH] [--dry-run] [--force] [--monochrome]
-                  [--push TARGET_NAME [TARGET_NAME ...]] --repo URI --target
-                  TARGET_NAME[:TAG] [TARGET_NAME[:TAG] ...]
+                  [--push TARGET_NAME [TARGET_NAME ...]] [--push-all] --repo URI
+                  --target TARGET_NAME[:TAG] [TARGET_NAME[:TAG] ...]
 
     Build container images faster ⚡️
 
@@ -73,10 +72,11 @@ CLI arguments
       --monochrome, -m      Don't colorize log messages
       --push TARGET_NAME [TARGET_NAME ...], -p TARGET_NAME [TARGET_NAME ...]
                             Image target(s) to push to repo after building
+      --push-all            Push all image targets to repo after building
       --repo URI, -r URI    Image repo to use (e.g. lexsca/prefab)
       --target TARGET_NAME[:TAG] [TARGET_NAME[:TAG] ...], -t TARGET_NAME[:TAG] [TARGET_NAME[:TAG] ...]
-                            Image target(s) to build with optional custom image
-                            tag
+                            Image target(s) to build with optional custom image tag
+
 
 Local Python package
 --------------------
@@ -89,13 +89,13 @@ To run *Prefab* as a local Python package to build an push a build target::
 
     prefab --repo repo.tld/org/project --push --target name
 
+⚠️  NOTE: Container images now hosted on Docker Hub ⚠️
+-----------------------------------------------------
 
-.. note::
-   The container images below used to be hosted by Quay and are now 
-   hosted by Docker Hub. This decision was not taken lightly. Sadly,
-   Quay has not proven to be a reliable service. The final straw was
-   when RedHat acquired them and broke authentication.
-
+The container images below used to be hosted by Quay and are now
+hosted by Docker Hub. This decision was not taken lightly. Sadly,
+Quay has not proven to be a reliable service. The final straw was
+when RedHat acquired them and broke authentication.
 
 Docker outside of Docker (DooD)
 -------------------------------
@@ -108,7 +108,7 @@ To run the *Prefab* Docker outside of Docker image to build an push a build targ
 
     docker run --rm -it -v $(/bin/pwd):/build -w /build \
         -e REGISTRY_AUTH=$(jq -c . ~/.docker/config.json | base64) \
-        -v /var/run/docker.sock:/docker.sock \                
+        -v /var/run/docker.sock:/docker.sock \
         lexsca/prefab:dood --repo repo.tld/org/project \
         --push --target name
 
@@ -122,7 +122,7 @@ To get the *Prefab* Docker in Docker (DinD) image::
 To run the *Prefab* Docker in Docker image to build an push a build target::
 
     docker run --rm -it -v $(/bin/pwd):/build -w /build --privileged \
-        -e REGISTRY_AUTH=$(jq -c . ~/.docker/config.json | base64) \                
+        -e REGISTRY_AUTH=$(jq -c . ~/.docker/config.json | base64) \
         lexsca/prefab:dind --repo repo.tld/org/project \
         --push --target name
 
@@ -196,7 +196,7 @@ Use environment
 
 Once created, the development image can used via::
 
-    $ make shell 
+    $ make shell
     docker run --rm -it -v /Users/lexsca/git/prefab:/prefab -w /prefab \
             -v /var/run/docker.sock:/docker.sock -e PYTHONPATH=/prefab/lib \
             --entrypoint /bin/bash lexsca/prefab:dev --login -o vi
