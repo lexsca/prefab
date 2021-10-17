@@ -4,7 +4,7 @@ on:
   create:
 
 jobs:
-  Create RC:
+  ReleaseCandidate:
     if: ${{ startsWith(github.ref, 'refs/tags/v') }}
 
     runs-on: ubuntu-latest
