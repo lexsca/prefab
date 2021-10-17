@@ -19,9 +19,6 @@ Prefab
 .. image:: https://img.shields.io/pypi/pyversions/container-prefab.svg
     :target: https://pypi.org/project/container-prefab/
 
-.. image:: https://img.shields.io/pypi/wheel/container-prefab.svg
-    :target: https://pypi.org/project/container-prefab/
-
 .. image:: https://img.shields.io/github/license/lexsca/prefab.svg
     :target: https://github.com/lexsca/prefab/blob/master/LICENSE
 
