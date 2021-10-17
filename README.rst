@@ -10,17 +10,17 @@ Prefab
 
 |
 
-.. image:: https://img.shields.io/pypi/pyversions/container-prefab.svg
-    :target: https://pypi.org/project/container-prefab/
+.. image:: https://github.com/lexsca/prefab/actions/workflows/checks.yml/badge.svg
+    :target: https://github.com/lexsca/prefab/actions/workflows/checks.yml
 
 .. image:: https://img.shields.io/pypi/v/container-prefab.svg
     :target: https://pypi.org/project/container-prefab/
 
-.. image:: https://img.shields.io/pypi/wheel/container-prefab.svg
+.. image:: https://img.shields.io/pypi/pyversions/container-prefab.svg
     :target: https://pypi.org/project/container-prefab/
 
-.. image:: https://readthedocs.org/projects/prefab/badge/?version=stable
-    :target: https://prefab.readthedocs.io/en/stable/?badge=stable
+.. image:: https://img.shields.io/pypi/wheel/container-prefab.svg
+    :target: https://pypi.org/project/container-prefab/
 
 .. image:: https://img.shields.io/github/license/lexsca/prefab.svg
     :target: https://github.com/lexsca/prefab/blob/master/LICENSE
