@@ -23,12 +23,17 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt -r requirements-dev.txt
 
-    - name: Run linters
-      run: |
-        black --check --diff .
-        flake8 .
-        bandit .
-        mypy --ignore-missing-imports .
+    - name: Run black
+      run: black --check --diff .
+
+    - name: Run flake8
+      run: flake8 .
+
+    - name: Run bandit
+      run: bandit .
+
+    - name: Run mypy
+      run: mypy --ignore-missing-imports .
 
   Test:
     runs-on: ubuntu-latest
