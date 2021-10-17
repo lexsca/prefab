@@ -15,7 +15,8 @@ help:
 
 clean:
 	rm -fr lib/*.egg-info dist build .pytest_cache $(VERSION_PY) \
-		.coverage coverage.xml *.spec docs/_build/* docs/_build/.??*
+		.coverage coverage.xml *.spec docs/_build/* docs/_build/.??* \
+		.mypy_cache
 	find . -type d -name __pycache__ -exec /bin/rm -fr {} +
 	find . -depth -type f -name '*.pyc' -exec /bin/rm -fr {} +
 
@@ -43,8 +44,8 @@ format:
 lint:
 	black --check --diff .
 	flake8 .
-	bandit .
-	mypy --ignore-missing-imports --cache-dir=/dev/null .
+	bandit -r bin lib
+	mypy --ignore-missing-imports .
 
 test: clean lint
 	pytest -v --random-order --cov=lib --cov-report=term-missing tests

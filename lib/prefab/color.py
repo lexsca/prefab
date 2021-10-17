@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Optional
 
 from . import constants as C
 
@@ -6,24 +6,42 @@ from . import constants as C
 class Color:
     reset: str = "\x1b[0m"
 
-    def __init__(self, style: Dict[str, int] = C.DEFAULT_COLOR_STYLE) -> None:
-        self.enabled: bool = True
-        self.style: Dict[str, int] = style.copy()
+    def __init__(
+        self,
+        style: Dict[str, Optional[int]] = C.DEFAULT_COLOR_STYLE,
+        enabled: bool = True,
+    ) -> None:
+        self.enabled: bool = enabled
+        self.style: Dict[str, Optional[int]] = style.copy()
 
-        cls = type(self)
+    def _colorize(self, style_name: str, text: str) -> str:
+        # https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit
+        color_code = self.style.get(style_name)
+        color_seq = f"\x1b[38;5;{color_code}m"
+        colorize = self.enabled and color_code is not None
 
-        for style in self.style:
-            if not hasattr(cls, style):
+        return f"{color_seq}{text}{self.reset}" if colorize else text
 
-                def colorizer(this, text: str, style: str = style) -> str:
-                    # https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit
-                    color_code = self.style.get(style)
-                    color_seq = f"\x1b[38;5;{color_code}m"
-                    colorize = this.enabled and color_code is not None
+    def config(self, text: str) -> str:
+        return self._colorize("config", text)
 
-                    return f"{color_seq}{text}{self.reset}" if colorize else text
+    def elapsed(self, text: str) -> str:
+        return self._colorize("elapsed", text)
 
-                setattr(cls, style, colorizer)
+    def error(self, text: str) -> str:
+        return self._colorize("error", text)
+
+    def header(self, text: str) -> str:
+        return self._colorize("header", text)
+
+    def image(self, text: str) -> str:
+        return self._colorize("image", text)
+
+    def target(self, text: str) -> str:
+        return self._colorize("target", text)
+
+    def warning(self, text: str) -> str:
+        return self._colorize("warning", text)
 
 
 color = Color()

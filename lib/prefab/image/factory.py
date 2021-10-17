@@ -58,7 +58,7 @@ class ImageFactory:
 
     def _get_target_watch_files(self, target: str) -> List[str]:
         target_config = self.config.get_target(target)
-        watch_files = [target_config.get("dockerfile")]
+        watch_files = [target_config["dockerfile"]]
 
         for path in target_config["watch_files"]:
             if stat.S_ISDIR(os.stat(path).st_mode):
