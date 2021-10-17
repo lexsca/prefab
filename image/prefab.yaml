@@ -14,12 +14,6 @@ options:
     warning: 1
 
 targets:
-  pypi:
-    dockerfile: image/Dockerfile.pypi
-    depends_on:
-      - dist
-      - dev-wheels
-
   dood:
     dockerfile: image/Dockerfile.dood
     depends_on:

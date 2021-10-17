@@ -1,7 +1,5 @@
-.PHONY: bootstrap build cache-clean cache-push clean docker-clean format \
-		git-tag-push image-push lint publish push-image push-release-tag \
-		pypi-upload refesh-requirements release shell spotless test \
-		upload-pypi version
+.PHONY: bootstrap build cache-clean clean docker-clean format \
+		git-tag-push lint refesh-requirements shell spotless test version
 
 IMAGE_REPO ?= lexsca/prefab
 VERSION ?= $(shell TZ=UTC git log -1 --format='%cd' \
@@ -54,24 +52,15 @@ test: clean lint
 version:
 	echo '__version__ = "$(VERSION)"' > $(VERSION_PY)
 
-build: version
-	bin/prefab -c image/prefab.yaml -r $(IMAGE_REPO) \
-		-t pypi:pypi-$(VERSION) dind:dind-$(VERSION) dood:dood-$(VERSION)
-
-release: version
-	docker run --rm -it -v $(shell /bin/pwd):/prefab -w /prefab \
-		-v /var/run/docker.sock:/docker.sock -e PYTHONPATH=lib \
-		$(IMAGE_REPO):dev make test version build
-
 smoke-test:
 	# build prefab from prefab dind and dood artifacts
 	$(MAKE) cache-clean
 	docker run --rm -it -v $(shell /bin/pwd):/build -w /build \
 		-v /var/run/docker.sock:/docker.sock $(IMAGE_REPO):dood-$(VERSION) \
-		-c image/prefab.yaml -r $(IMAGE_REPO) -t dind dood pypi
+		-c image/prefab.yaml -r $(IMAGE_REPO) -t dind dood
 	docker run --rm -it -v $(shell /bin/pwd):/build -w /build --privileged \
 		$(IMAGE_REPO):dind-$(VERSION) -c image/prefab.yaml \
-		-r $(IMAGE_REPO) -t dind dood pypi
+		-r $(IMAGE_REPO) -t dind dood
 
 cache-clean: IMAGES = $(shell \
 	docker images --format '{{.Repository}}:{{.Tag}}' ${IMAGE_REPO} | \
@@ -80,32 +69,9 @@ cache-clean:
 	$(foreach image,$(IMAGES),docker rmi $(image);)
 	docker image prune -f
 
-cache-push:
-	@docker run --rm -it -v $(shell /bin/pwd):/build -w /build \
-		-v /var/run/docker.sock:/docker.sock -e PYTHONPATH=lib \
-		-e REGISTRY_AUTH=$(shell jq -c . ~/.docker/config.json | base64) \
-		$(IMAGE_REPO):dev bin/prefab -c image/prefab.yaml \
-		-r $(IMAGE_REPO) -t dist -p tools wheels dev-wheels dist
-
-image-push:
-	docker tag $(IMAGE_REPO):dind-$(VERSION) $(IMAGE_REPO):dind
-	docker tag $(IMAGE_REPO):dood-$(VERSION) $(IMAGE_REPO):dood
-	docker push $(IMAGE_REPO):dind-$(VERSION)
-	docker push $(IMAGE_REPO):dood-$(VERSION)
-	docker push $(IMAGE_REPO):dind
-	docker push $(IMAGE_REPO):dood
-
-pypi-upload:
-	@docker run --rm -it -e TWINE_PASSWORD=$(TWINE_PASSWORD) \
-		$(IMAGE_REPO):pypi-$(VERSION)
-
 git-tag-push:
 	git tag v$(RELEASE_TAG) HEAD
 	git push origin v$(RELEASE_TAG)
-
-publish: image-push pypi-upload git-tag-push
-
-deploy: spotless bootstrap release smoke-test publish
 
 requirements.txt: requirements.in
 	pip-compile -v requirements.in
