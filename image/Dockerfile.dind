@@ -3,7 +3,8 @@ ARG PREFAB_DIST
 FROM $PREFAB_DIST as dist
 FROM docker:20.10.9-dind
 
-RUN mkdir -p /root/.docker && \
+RUN apk --no-cache upgrade && \
+    mkdir -p /root/.docker && \
     echo '{"auths":{}}' > /auth.json && \
     ln -fs /auth.json /root/.docker/config.json
 

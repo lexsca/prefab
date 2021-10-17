@@ -1,4 +1,4 @@
-FROM python:3.9.7-alpine3.13
+FROM python:3.9.7-alpine3.14
 
 RUN apk -U add alpine-sdk zlib-dev libffi-dev openssl-dev && \
     pip3 install -U wheel pip pip-tools six && \
