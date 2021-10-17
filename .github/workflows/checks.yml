@@ -30,7 +30,7 @@ jobs:
       run: flake8 .
 
     - name: Run bandit
-      run: bandit .
+      run: bandit -r bin lib
 
     - name: Run mypy
       run: mypy --ignore-missing-imports .

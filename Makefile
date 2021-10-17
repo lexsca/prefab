@@ -44,7 +44,7 @@ format:
 lint:
 	black --check --diff .
 	flake8 .
-	bandit .
+	bandit -r bin lib
 	mypy --ignore-missing-imports .
 
 test: clean lint
