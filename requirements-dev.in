@@ -8,4 +8,7 @@ pytest-cov
 pytest-random-order
 sphinx
 sphinx-rtd-theme
+types-PyYAML
+types-setuptools
+types-toml
 wheel

@@ -40,7 +40,7 @@ class ImageGraph:
 
         return dependencies
 
-    def resolve_target_dependencies(self, target: str) -> List[DockerImage]:
+    def resolve_target_dependencies(self, target: str) -> List[str]:
         return self._resolve_target_dependencies(
             target=target, dependencies=[], vectors=[]
         )

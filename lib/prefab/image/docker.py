@@ -46,7 +46,7 @@ class DockerImage:
                     yield json.loads(line)
                 except json.decoder.JSONDecodeError:
                     self.logger.warning(
-                        color.warning(f"Skipping malformed log entry: {chunk}")
+                        color.warning(f"Skipping malformed log entry: {chunk!r}")
                     )
 
     def _format_transfer_message(self, log_entry: Dict[str, Any]) -> str:
@@ -58,9 +58,8 @@ class DockerImage:
         return message
 
     def _process_transfer_log_stream(
-        self, log_stream: Generator[Dict[str, Any], None, None]
+        self, log_stream: Generator[bytes, None, None]
     ) -> None:
-
         for log_entry in self._log_stream_decoder(log_stream):
             if "error" in log_entry:
                 raise E.ImageAccessError(log_entry["error"])
@@ -72,7 +71,7 @@ class DockerImage:
             self.logger.info(message)
 
     def _process_build_log_stream(
-        self, log_stream: Generator[Dict[str, Any], None, None]
+        self, log_stream: Generator[bytes, None, None]
     ) -> None:
         for log_entry in self._log_stream_decoder(log_stream):
             for key in {"error", "message"}:

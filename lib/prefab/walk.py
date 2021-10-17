@@ -1,6 +1,6 @@
 import fnmatch
 import os
-from typing import List, Tuple
+from typing import List, Set, Tuple
 
 
 def parse_ignore_patterns(patterns: List[str]) -> Tuple[List[str], List[str]]:
@@ -23,7 +23,7 @@ def cull_dirs(
     file_names: List[str],
     ignore_patterns: List[str],
 ) -> None:
-    ignore_dirs = set()
+    ignore_dirs: Set[str] = set()
 
     for pattern in ignore_patterns:
         if fnmatch.fnmatch(base_dir, pattern):

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 
 DEFAULT_ALLOWED_PULL_ERRORS: List[str] = [
@@ -14,7 +14,7 @@ DEFAULT_BUILD_OPTIONS: Dict[str, Any] = {
 }
 DEFAULT_BUILDARG_PREFIX = "PREFAB_"
 DEFAULT_BUILD_ON_VALIDATE_ERROR = True
-DEFAULT_COLOR_STYLE: Dict[str, int] = {
+DEFAULT_COLOR_STYLE: Dict[str, Optional[int]] = {
     "config": 2,
     "elapsed": 11,
     "error": 1,
