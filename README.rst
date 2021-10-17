@@ -84,8 +84,8 @@ To run *Prefab* as a local Python package to build an push a build target::
 
     prefab --repo repo.tld/org/project --push --target name
 
-⚠️  NOTE: Container images now hosted on Docker Hub ⚠️
------------------------------------------------------
+NOTE: Container images now hosted on Docker Hub
+-----------------------------------------------
 
 The container images below used to be hosted by Quay and are now
 hosted by `Docker Hub <https://hub.docker.com/r/lexsca/prefab>`_
