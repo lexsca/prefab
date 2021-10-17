@@ -22,9 +22,6 @@ Prefab
 .. image:: https://readthedocs.org/projects/prefab/badge/?version=stable
     :target: https://prefab.readthedocs.io/en/stable/?badge=stable
 
-.. image:: https://coveralls.io/repos/github/lexsca/prefab/badge.svg?branch=main
-    :target: https://coveralls.io/github/lexsca/prefab?branch=main
-
 .. image:: https://img.shields.io/github/license/lexsca/prefab.svg
     :target: https://github.com/lexsca/prefab/blob/master/LICENSE
 
@@ -94,9 +91,10 @@ To run *Prefab* as a local Python package to build an push a build target::
 -----------------------------------------------------
 
 The container images below used to be hosted by Quay and are now
-hosted by Docker Hub. This decision was not taken lightly. Sadly,
-Quay has not proven to be a reliable service. The final straw was
-when RedHat acquired them and broke authentication.
+hosted by `Docker Hub <https://hub.docker.com/r/lexsca/prefab>`_
+This decision was not taken lightly. Sadly, Quay has not proven to
+be a reliable service. The final straw was when RedHat acquired
+them and broke authentication.
 
 Docker outside of Docker (DooD)
 -------------------------------
