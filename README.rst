@@ -13,6 +13,9 @@ Prefab
 .. image:: https://github.com/lexsca/prefab/actions/workflows/checks.yml/badge.svg
     :target: https://github.com/lexsca/prefab/actions/workflows/checks.yml
 
+.. image:: https://img.shields.io/docker/image-size/lexsca/prefab/dood
+   :target: https://hub.docker.com/r/lexsca/prefab/tags
+
 .. image:: https://img.shields.io/pypi/v/container-prefab.svg
     :target: https://pypi.org/project/container-prefab/
 
@@ -106,7 +109,7 @@ To run the *Prefab* Docker outside of Docker image to build an push a build targ
         -e REGISTRY_AUTH=$(jq -c . ~/.docker/config.json | base64) \
         -v /var/run/docker.sock:/docker.sock \
         lexsca/prefab:dood --repo repo.tld/org/project \
-        --push --target name
+        --push-all --target name
 
 Docker in Docker (DinD)
 -----------------------
@@ -120,14 +123,14 @@ To run the *Prefab* Docker in Docker image to build an push a build target::
     docker run --rm -it -v $(/bin/pwd):/build -w /build --privileged \
         -e REGISTRY_AUTH=$(jq -c . ~/.docker/config.json | base64) \
         lexsca/prefab:dind --repo repo.tld/org/project \
-        --push --target name
+        --push-all --target name
 
 Configuration
 =============
 
 *Prefab* uses a `YAML <https://en.wikipedia.org/wiki/YAML>`_ configuration file to determine which container images to build for a given target and in which order.  This configuration below is taken from the `example directory <https://github.com/lexsca/prefab/tree/main/example>`_ in this repo.
 
-The ``prefab.yml`` file has two build targets, each with a Dockerfile. The ``app`` target has a dependency on the ``packages`` target, so it's built or pulled first, before building the ``app`` target.  This is a simple example, but the dependency graph can be arbitrarily deep or wide for complex build targets.
+This example ``prefab.yml`` file has two build targets, each with a Dockerfile. The ``app`` target has a dependency on the ``packages`` target, so it's built or pulled first, before building the ``app`` target.  This is a simple example, but the dependency graph can be arbitrarily deep or wide for complex build targets.
 
 ``prefab.yml``
 --------------
