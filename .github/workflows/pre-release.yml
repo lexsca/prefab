@@ -37,5 +37,3 @@ jobs:
         pip install dist/*.whl
         prefab --config image/prefab.yaml --repo lexsca/prefab --push-all \
           --target dood:dood-${{ env.PREFAB_VERSION }} dind:dind-${{ env.PREFAB_VERSION }}
-        docker tag lexsca/prefab:dood-${{ env.PREFAB_VERSION }} lexsca/prefab:dood
-        docker tag lexsca/prefab:dind-${{ env.PREFAB_VERSION }} lexsca/prefab:dind
