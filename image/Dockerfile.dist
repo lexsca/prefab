@@ -3,13 +3,9 @@ ARG PREFAB_DEV
 FROM $PREFAB_DEV as dev
 WORKDIR /build
 
-COPY lib/ lib/
-COPY bin/ bin/
-COPY setup.py setup.py
-COPY README.* .
+COPY dist/ dist/
 
-RUN python3 setup.py bdist_wheel && \
-    pip3 install dist/*.whl && \
+RUN pip3 install dist/*.whl && \
     which prefab | xargs pyinstaller --onefile
 
 FROM scratch
