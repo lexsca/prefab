@@ -13,5 +13,6 @@ class TargetLoggerAdapter(logging.LoggerAdapter):
     def process(
         self, message: str, kwargs: MutableMapping[str, Any]
     ) -> Tuple[str, MutableMapping[str, Any]]:
-        prefix = color.target(f"[{self.extra.get('target', '<none>')}]")
+        extra = {} if self.extra is None else self.extra
+        prefix = color.target(f"[{extra.get('target', '<none>')}]")
         return f"{prefix} {message}", kwargs
