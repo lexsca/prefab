@@ -6,6 +6,7 @@ pip-tools
 pytest
 pytest-cov
 pytest-random-order
+setuptools_scm
 sphinx
 sphinx-rtd-theme
 types-PyYAML

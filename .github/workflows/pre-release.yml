@@ -30,7 +30,7 @@ jobs:
     - name: Build package
       run: |
         echo "PREFAB_VERSION=$(python setup.py --version)" >> $GITHUB_ENV
-        python setup.py sdist bdist_wheel
+        python setup.py bdist_wheel
 
     - name: Build and publish to Docker Hub
       run: |
