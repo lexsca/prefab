@@ -204,3 +204,4 @@ Once created, the development image can used via::
 This will mount the docker socket and current working directory in an environment where tests can be run, dependencies built, or a debugger invoked to aid in iterating.
 
 The ``make test`` command should pass before attempting to submit any code changes.
+
