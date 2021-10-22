@@ -55,7 +55,6 @@ mypy-extensions==0.4.3
 packaging==21.0
     # via
     #   pytest
-    #   setuptools-scm
     #   sphinx
 pathspec==0.9.0
     # via black
@@ -96,8 +95,6 @@ regex==2021.10.8
     # via black
 requests==2.26.0
     # via sphinx
-setuptools-scm==6.3.2
-    # via -r requirements-dev.in
 six==1.16.0
     # via bandit
 smmap==4.0.0
@@ -133,7 +130,6 @@ tomli==1.2.1
     #   black
     #   coverage
     #   pep517
-    #   setuptools-scm
 types-pyyaml==5.4.12
     # via -r requirements-dev.in
 types-setuptools==57.4.2
