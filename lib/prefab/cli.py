@@ -81,7 +81,7 @@ def _arg_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def parse_options(args: List[str]) -> argparse.Namespace:
+def _parse_args(args: List[str]) -> argparse.Namespace:
     parser = _arg_parser()
     options = parser.parse_args(args)
     options.tags = dict()
@@ -107,7 +107,7 @@ def parse_options(args: List[str]) -> argparse.Namespace:
 
 
 def parse_args(args: List[str]) -> Tuple[argparse.Namespace, Config]:
-    options = parse_options(args)
+    options = _parse_args(args)
     config = Config.from_yaml_filepath(options.config_file)
 
     if not options.color:
