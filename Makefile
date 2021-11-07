@@ -41,13 +41,13 @@ shell:
 format:
 	black .
 
-lint:
+lint: clean
 	black --check --diff .
 	flake8 .
 	bandit -r bin lib
 	mypy --ignore-missing-imports .
 
-test: clean lint
+test: clean
 	pytest -v --random-order --cov=lib --cov-report=term-missing tests
 
 version:
