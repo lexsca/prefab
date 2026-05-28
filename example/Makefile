@@ -8,6 +8,9 @@ app:
 		--platform linux/amd64 lexsca/prefab:dood \
 		--repo ${IMAGE_REPO} --target app:app 
 
+demo:
+	../bin/prefab --repo lexsca/prefab-example --target app:app
+
 run:
 	docker run --platform linux/amd64 -it --rm -p 8000:8000 $(IMAGE_REPO):app
 
