@@ -147,7 +147,7 @@ def elapsed_time(monotonic_start: float) -> str:
     elapsed_time = datetime.timedelta(seconds=time.monotonic() - monotonic_start)
     seconds = elapsed_time.seconds
     category = 1 + (-1 if seconds < 10 else seconds // 60 if seconds < 240 else 4)
-    awards = ("⚡", "🚀", "🥇", "🥈", "🥉", "🐢")
+    awards = ("⚡️", "🚀", "🥇", "🥈", "🥉", "🐢")
 
     return f"{str(elapsed_time)[:-4]} {awards[category]}"
 
