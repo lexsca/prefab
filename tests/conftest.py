@@ -3,7 +3,6 @@ import sys
 
 import pytest
 
-
 LIB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "lib"))
 FIXTURES_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "fixtures"))
 sys.path.insert(0, LIB_PATH)
