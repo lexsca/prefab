@@ -19,7 +19,6 @@ import sphinx_rtd_theme  # noqa: E402,F401
 
 from prefab import __version__  # noqa: E402
 
-
 # -- Project information -----------------------------------------------------
 
 project = "prefab"

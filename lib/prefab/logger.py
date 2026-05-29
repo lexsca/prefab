@@ -3,7 +3,6 @@ from typing import Any, MutableMapping, Tuple
 
 from .color import color
 
-
 logger = logging.getLogger("prefab")
 logger.handlers = [logging.StreamHandler()]
 logger.setLevel(logging.INFO)

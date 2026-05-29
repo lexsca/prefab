@@ -7,7 +7,6 @@ import pytest
 from prefab import envfile
 from prefab.color import color
 
-
 ENV_KEY = "REGISTRY_AUTH"
 
 
