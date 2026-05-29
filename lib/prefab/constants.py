@@ -1,6 +1,5 @@
 from typing import Any, Dict, List, Optional
 
-
 DEFAULT_ALLOWED_PULL_ERRORS: List[str] = [
     "ImageAccessError",
     "ImageNotFoundError",
